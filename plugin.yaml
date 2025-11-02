@@ -1,0 +1,90 @@
+name: Images to Woo Products (Uploader Edition)
+slug: images-to-woo-products
+description: >
+  Upload or select multiple images and automatically create WooCommerce Simple
+  products from them. Per-item controls (price, categories, visibility, status,
+  tags, SKU prefix), global settings (auto-SKU, global categories), duplicate
+  detection with preview, optional image reuse, and Woo onboarding redirect guard.
+version: 2.3.2
+author: Marv
+license: GPL-2.0-or-later
+homepage: https://github.com/martogt/images-to-woo-products
+repository: https://github.com/martogt/images-to-woo-products
+entry_file: images-to-woo-products.php
+
+requirements:
+  wordpress: ">=6.0"
+  woocommerce: ">=9.0"
+  php: ">=7.4"
+
+screenshots:
+  - path: assets/banner-preview.png
+    title: "Bulk-create WooCommerce products from images – overview banner"
+  - path: assets/ui-overview.png
+    title: "Main UI: select/upload images and list them in a Woo-style table"
+  - path: assets/ui-row-example.png
+    title: "Per-item controls: price, categories, visibility, status, SKU, tags"
+  - path: assets/products-list.png
+    title: "Result in WooCommerce → All Products"
+
+branding:
+  logo: assets/logo.png
+  colors:
+    primary: "#96588A"   # Woo purple
+    background: "#F6F7F9"
+    text: "#222222"
+
+features:
+  - bulk_image_upload
+  - per_item_controls
+  - auto_sku_with_prefix
+  - duplicate_detection_modal
+  - global_categories_multiselect
+  - allow_reuse_featured_images
+  - disable_wc_onboarding_redirect
+
+admin:
+  menu:
+    parent: products
+    submenu_title: "Images → Products"
+    capability: manage_woocommerce
+  pages:
+    - slug: images-to-woo-products
+      title: "Images → Woo Products (Uploader)"
+      description: "Upload/select images and configure per-item product fields."
+      has_global_settings: true
+      actions:
+        - select_upload_images
+        - clear_selection
+        - create_products_now
+
+options:
+  - key: itpwc_disable_onboarding
+    type: boolean
+    default: false
+    description: "Disable WooCommerce onboarding redirects and task list."
+  - key: itpwc_allow_reuse_image
+    type: boolean
+    default: false
+    description: "Allow using an image already set as featured on another product."
+  - key: itpwc_sku_next
+    type: integer
+    default: 1
+    description: "Next sequential number for SKU generation (persisted)."
+
+build:
+  include:
+    - images-to-woo-products.php
+    - README.md
+    - plugin.yaml
+    - assets/**
+  exclude:
+    - .git/**
+    - .github/**
+    - .vscode/**
+    - "*.zip"
+    - "node_modules/**"
+
+compatibility:
+  multisite: true
+  localization_ready: false

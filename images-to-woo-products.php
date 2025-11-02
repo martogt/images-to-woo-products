@@ -1,17 +1,17 @@
 <?php
 /**
- * Plugin Name: ImToWOOPro – Images to WooCommerce Products
- * Plugin URI:  https://github.com/USERNAME/im-to-woo-pro
+ * Plugin Name: Images to Woo Products (Uploader Edition)
+ * Plugin URI:  https://github.com/martogt/images-to-woo-products
  * Description: Upload/select images and convert them into WooCommerce Simple products (bulk UI, SKU generator, categories, tags). WP.org‑ready structured version.
- * Version: 2.0.9
+ * Version: 2.3.2
  * Requires at least: 6.0
- * Tested up to: 6.6
+ * Tested up to: 6.8.3
  * Requires PHP: 7.4
  * Author: Marv
  * Author URI: https://example.com
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: im-to-woo-pro
+ * Text Domain: images-to-woo-products
  * Domain Path: /languages
  *
  * @package ImToWOOPro
@@ -26,7 +26,7 @@ define( 'IMTOWOOPRO_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 // Load text domain.
 add_action( 'init', function() {
-    load_plugin_textdomain( 'im-to-woo-pro', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+    load_plugin_textdomain( 'images-to-woo-products', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 } );
 
 // Require uploader (ported from v2.0.9).
@@ -37,7 +37,7 @@ require IMTOWOOPRO_PLUGIN_DIR . 'includes/uploader.php';
 add_action( 'plugins_loaded', function(){
     if ( ! class_exists( 'WooCommerce' ) ) {
         add_action( 'admin_notices', function(){
-            echo '<div class="notice notice-error"><p>' . esc_html__( 'ImToWOOPro requires WooCommerce to be installed and active.', 'im-to-woo-pro' ) . '</p></div>';
+            echo '<div class="notice notice-error"><p>' . esc_html__( 'ImToWOOPro requires WooCommerce to be installed and active.', 'images-to-woo-products' ) . '</p></div>';
         } );
         return;
     }
