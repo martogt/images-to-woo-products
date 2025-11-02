@@ -8,7 +8,6 @@
  * Tested up to: 6.8.3
  * Requires PHP: 7.4
  * Author: Marv
- * Author URI: https://example.com
  * License: GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: images-to-woo-products

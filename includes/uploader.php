@@ -42,9 +42,9 @@ final class ITPWC_Uploader {
         // Handle POST
         if ( isset($_POST['itpwc_run']) && check_admin_referer('itpwc_run_nonce') ) {
             $use_sku      = !empty($_POST['itpwc_use_sku']);
-            $global_pref  = isset($_POST['itpwc_sku_prefix']) ? sanitize_text_field($_POST['itpwc_sku_prefix']) : '';
-            $per_image    = isset($_POST['itpwc_per_image']) ? json_decode(wp_unslash($_POST['itpwc_per_image']), true) : [];
-            $ids_raw      = isset($_POST['itpwc_attachment_ids']) ? sanitize_text_field($_POST['itpwc_attachment_ids']) : '';
+            $global_pref  = isset($_POST['itpwc_sku_prefix']) ? sanitize_text_field( wp_unslash( $_POST['itpwc_sku_prefix'] ) ) : '';
+            $per_image    = isset(wp_unslash( $_POST['itpwc_per_image'] )) ? json_decode(wp_unslash(wp_unslash( $_POST['itpwc_per_image'] )), true) : [];
+            $ids_raw      = isset(wp_unslash( $_POST['itpwc_attachment_ids'] )) ? sanitize_text_field(wp_unslash( $_POST['itpwc_attachment_ids'] )) : '';
             $ids          = array_filter(array_map('absint', array_filter(array_map('trim', explode(',', $ids_raw)))));
 
             // Global categories (multi‑select)
@@ -56,7 +56,8 @@ final class ITPWC_Uploader {
             } else {
                 $result = self::create_products($ids, $per_image, $use_sku, $global_pref, $global_cats);
                 echo '<div class="notice notice-success"><p>'
-                    . sprintf( esc_html__('Done: created %d products, skipped %d.', 'images-to-woo-products'), intval($result['created']), intval($result['skipped']) )
+                    . /* translators: 1: created products count, 2: skipped products count */
+sprintf( esc_html__('Done: created %1$d products, skipped %2$d.', 'images-to-woo-products'), intval($result['created']), intval($result['skipped']) )
                     . '</p></div>';
             }
         }
@@ -286,7 +287,7 @@ final class ITPWC_Uploader {
 
     /** Inline JS */
     private static function inline_js(){
-        return <<<JS
+        return <?php ob_start(); ?>
 (function($){
     var frame, idsField, perField, rowsBody, per = {}, seed = window.ITPWC_NEXT_SEED || 1;
     $(function(){
@@ -379,7 +380,7 @@ final class ITPWC_Uploader {
         function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]); }); }
     });
 })(jQuery);
-JS;
+<?php $itpwc_html_block = ob_get_clean(); ?>
     }
 }
 endif;

@@ -1,6 +1,6 @@
 === Images to Woo Products (Uploader Edition) ===
 Contributors: martogt
-Tags: woocommerce, bulk, products, uploader, images, media
+Tags: woocommerce, bulk, products, uploader, images
 Requires at least: 6.0
 Tested up to: 6.8.3
 Requires PHP: 7.4
