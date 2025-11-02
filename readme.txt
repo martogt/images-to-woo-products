@@ -2,53 +2,30 @@
 Contributors: martogt
 Tags: woocommerce, bulk, products, uploader, images
 Requires at least: 6.0
-Tested up to: 6.8.3
+Tested up to: 6.8
 Requires PHP: 7.4
 Stable tag: 2.3.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Upload or select images and convert them directly into WooCommerce products.
-Each image becomes a new Simple product with its filename as title and the same image as featured image.
+Bulk-create WooCommerce products from selected images—each image becomes a product with its filename as title.
 
 == Description ==
 **Images to Woo Products (Uploader Edition)** helps you create dozens of WooCommerce products at once.  
-Upload or select images from the Media Library, choose a category, tags and price, and instantly publish them.
-
-- Bulk-friendly per-row editor (visibility, SKU, tags, etc.)
-- Automatic SKU generation with prefix
-- Duplicate protection and preview dialog
-- Option to disable WooCommerce onboarding redirects
-- Multi-category and multi-tag support
+Upload or select images and convert them directly into products. Each image becomes a Simple product with the same image as featured image.
 
 == Installation ==
-1. Upload the `images-to-woo-products` folder to `/wp-content/plugins/`
-2. Activate the plugin from *Plugins → Installed Plugins*
-3. Go to *Products → Images → Products* to start uploading
+1. Upload the plugin folder `images-to-woo-products` to `/wp-content/plugins/`.
+2. Activate the plugin through **Plugins → Installed Plugins**.
+3. Go to **WooCommerce → Images → Products** and follow the UI.
 
-== Screenshots ==
-1. Uploading interface and per-row editor
-2. Global settings with SKU auto-generation
-3. Example of created products in WooCommerce list
+== Frequently Asked Questions ==
+= Does it support variable products? =
+Not yet. For now every image becomes a Simple product.
+
+= Can I set custom SKUs? =
+Yes. You can auto-generate SKUs with a prefix or set per-image values.
 
 == Changelog ==
 = 2.3.2 =
-* Added AJAX nonce and capability checks
-* Improved validation for visibility/status
-* Enhanced i18n domain and language files
-* UI/UX fixes and minor optimizations
-
-== Frequently Asked Questions ==
-= Does this plugin support variations? =
-Not yet — it creates only Simple products for now.
-
-= Can I use WebP or SVG images? =
-Yes, as long as your WordPress allows them. WebP is supported natively in 6.2+, SVG via plugin.
-
-== Upgrade Notice ==
-= 2.3.2 =
-Security and compatibility update. Please upgrade immediately.
-
-== License ==
-Released under GPLv2 or later.  
-© 2025 Marv – martogt.
+* WP.org preparation: unified text domain, escaping & sanitization, translators comments, readme fixes.

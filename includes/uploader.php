@@ -1,388 +1,280 @@
 <?php
 /**
- * Plugin Name: ImToWOOPro – Images to WooCommerce Products
- * Description: Upload images and convert them to Woo products (bulk, auto SKU, categories, etc.).
- * Version: 2.0.9
- * Requires at least: 6.0
- * Requires PHP: 7.4
- * Author: Marv
- * License: GPLv2 or later
- * Update URI: https://github.com/USERNAME/images-to-woo-products   // ВАЖНО за не-WP.org плъгини
+ * Admin UI and bulk creator.
+ *
+ * @package images-to-woo-products
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
-if ( ! defined('ABSPATH') ) exit;
+if ( ! class_exists( 'ITPWC_Uploader' ) ) :
 
-if ( ! class_exists('ITPWC_Uploader') ) :
 final class ITPWC_Uploader {
 
-    public static function boot(){
-        if ( ! class_exists('WooCommerce') ) return;
-        add_action('admin_menu', [__CLASS__, 'add_menu']);
-        add_action('admin_footer', [__CLASS__, 'print_inline_assets']);
-    }
+	public static function boot() {
+		add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
+	}
 
-    public static function add_menu(){
-        add_submenu_page(
-            'edit.php?post_type=product',
-            __('Images → Products', 'images-to-woo-products'),
-            __('Images → Products', 'images-to-woo-products'),
-            'manage_woocommerce',
-            'imtowoopro-images-products',
-            [__CLASS__, 'render_admin_page']
-        );
-    }
+	public static function register_menu() {
+		add_menu_page(
+			esc_html__( 'Images → Products', 'images-to-woo-products' ),
+			esc_html__( 'Images → Products', 'images-to-woo-products' ),
+			'manage_woocommerce',
+			'images-to-woo-products',
+			array( __CLASS__, 'render_admin_page' ),
+			'dashicons-format-image',
+			58
+		);
+	}
 
-    /** Render admin page */
-    public static function render_admin_page(){
-        if ( ! current_user_can('manage_woocommerce') ) return;
-        if ( function_exists('wp_enqueue_media') ) wp_enqueue_media();
-        wp_enqueue_script('jquery');
+	/** Render admin page */
+	public static function render_admin_page() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
 
-        // Handle POST
-        if ( isset($_POST['itpwc_run']) && check_admin_referer('itpwc_run_nonce') ) {
-            $use_sku      = !empty($_POST['itpwc_use_sku']);
-            $global_pref  = isset($_POST['itpwc_sku_prefix']) ? sanitize_text_field( wp_unslash( $_POST['itpwc_sku_prefix'] ) ) : '';
-            $per_image    = isset(wp_unslash( $_POST['itpwc_per_image'] )) ? json_decode(wp_unslash(wp_unslash( $_POST['itpwc_per_image'] )), true) : [];
-            $ids_raw      = isset(wp_unslash( $_POST['itpwc_attachment_ids'] )) ? sanitize_text_field(wp_unslash( $_POST['itpwc_attachment_ids'] )) : '';
-            $ids          = array_filter(array_map('absint', array_filter(array_map('trim', explode(',', $ids_raw)))));
+		if ( function_exists( 'wp_enqueue_media' ) ) {
+			wp_enqueue_media();
+		}
+		wp_enqueue_script( 'jquery' );
 
-            // Global categories (multi‑select)
-            $global_cats  = isset($_POST['itpwc_global_cats']) ? array_map('intval', (array)$_POST['itpwc_global_cats']) : [];
-            $global_cats  = array_values(array_filter($global_cats)); // remove zeros
+		// Handle form submit.
+		if ( isset( $_POST['itpwc_run'] ) && check_admin_referer( 'itpwc_run_nonce' ) ) {
 
-            if ( empty($ids) ) {
-                echo '<div class="notice notice-error"><p>'.esc_html__('Please select or upload at least one image.', 'images-to-woo-products').'</p></div>';
-            } else {
-                $result = self::create_products($ids, $per_image, $use_sku, $global_pref, $global_cats);
-                echo '<div class="notice notice-success"><p>'
-                    . /* translators: 1: created products count, 2: skipped products count */
-sprintf( esc_html__('Done: created %1$d products, skipped %2$d.', 'images-to-woo-products'), intval($result['created']), intval($result['skipped']) )
-                    . '</p></div>';
-            }
-        }
+			$use_sku     = ! empty( $_POST['itpwc_use_sku'] );
+			$global_pref = isset( $_POST['itpwc_sku_prefix'] ) ? sanitize_text_field( wp_unslash( $_POST['itpwc_sku_prefix'] ) ) : '';
+			$per_image   = isset( $_POST['itpwc_per_image'] ) ? json_decode( wp_unslash( $_POST['itpwc_per_image'] ), true ) : array();
+			$ids_raw     = isset( $_POST['itpwc_attachment_ids'] ) ? sanitize_text_field( wp_unslash( $_POST['itpwc_attachment_ids'] ) ) : '';
+			$ids         = array_filter( array_map( 'absint', array_filter( array_map( 'trim', explode( ',', $ids_raw ) ) ) ) );
 
-        // Category options (HTML reused in rows & global control)
-        $cat_options_html = self::get_category_options_html();
-        $next_seed = (int) get_option('itpwc_sku_next', 1);
+			$global_cats = isset( $_POST['itpwc_global_cats'] ) ? array_map( 'absint', (array) wp_unslash( $_POST['itpwc_global_cats'] ) ) : array();
+			$global_cats = array_values( array_filter( $global_cats ) );
 
-        echo '<div class="wrap">';
-        echo '<h1>'.esc_html__('Images → Woo Products (Uploader)', 'images-to-woo-products').'</h1>';
-        echo '<p>'.esc_html__('Select or upload images, then fill per-product fields below. The interface mirrors the Products list.', 'images-to-woo-products').'</p>';
+			if ( empty( $ids ) ) {
+				echo '<div class="notice notice-error"><p>' . esc_html__( 'Please select or upload at least one image.', 'images-to-woo-products' ) . '</p></div>';
+			} else {
+				$result = self::create_products( $ids, $per_image, $use_sku, $global_pref, $global_cats );
 
-        echo '<form method="post" id="itpwc_form">';
-        wp_nonce_field('itpwc_run_nonce');
-        echo '<input type="hidden" id="itpwc_attachment_ids" name="itpwc_attachment_ids" value="" />';
-        echo '<input type="hidden" id="itpwc_per_image" name="itpwc_per_image" value="{}" />';
+				/* translators: 1: created products count, 2: skipped images count */
+				$msg = sprintf(
+					esc_html__( 'Done: created %1$d products, skipped %2$d.', 'images-to-woo-products' ),
+					intval( $result['created'] ),
+					intval( $result['skipped'] )
+				);
 
-        // SETTINGS card (top)
-        echo '<div class="itpwc-card itpwc-settings">';
-        echo '<h2>'.esc_html__('Settings', 'images-to-woo-products').'</h2>';
-        echo '<div class="itpwc-grid-compact">';
-        echo '  <div class="itpwc-setting">'
-            .'<label class="itpwc-label"><input type="checkbox" name="itpwc_use_sku" value="1" checked> '.esc_html__('Auto-generate SKU numbers', 'images-to-woo-products').'</label>'
-            .'<p class="description">'.esc_html__('Sequential and persisted between runs. Live preview shown in rows.', 'images-to-woo-products').'</p>'
-            .'</div>';
-        echo '  <div class="itpwc-setting">'
-            .'<label class="itpwc-label">'.esc_html__('Global SKU prefix (optional)', 'images-to-woo-products').'</label>'
-            .'<input type="text" name="itpwc_sku_prefix" value="" class="regular-text" placeholder="ART-" />'
-            .'</div>';
-        echo '  <div class="itpwc-setting">'
-            .'<label class="itpwc-label">'.esc_html__('Global categories (optional)', 'images-to-woo-products').'</label>'
-            .'<select name="itpwc_global_cats[]" multiple size="5" class="itpwc-select-multi itpwc-compact-select">'
-            .'<option value="0">'.esc_html__('— No category —', 'images-to-woo-products').'</option>'
-            .$cat_options_html
-            .'</select>'
-            .'<p class="description">'.esc_html__('Applied to rows that keep “— No category —”. Per-row selection has priority.', 'images-to-woo-products').'</p>'
-            .'</div>';
-        echo '  <div class="itpwc-setting">'
-            .'<label class="itpwc-label">'.esc_html__('Next SKU number (preview)', 'images-to-woo-products').'</label>'
-            .'<input type="text" value="'.esc_attr( str_pad((string)$next_seed, 5, '0', STR_PAD_LEFT) ).'" class="regular-text" disabled />'
-            .'</div>';
-        echo '</div>'; // compact grid
-        echo '</div>';
+				echo '<div class="notice notice-success"><p>' . esc_html( $msg ) . '</p></div>';
+			}
+		}
 
-        // Toolbar
-        echo '<div class="itpwc-toolbar">';
-        echo '<button type="button" class="button button-secondary button-hero" id="itpwc_select_btn">'.esc_html__('Select / Upload images', 'images-to-woo-products').'</button> ';
-        echo '<button type="button" class="button" id="itpwc_clear_btn">'.esc_html__('Clear selection', 'images-to-woo-products').'</button>';
-        echo '<span class="itpwc-count"><strong id="itpwc_count">0</strong> '.esc_html__('images selected', 'images-to-woo-products').'</span>';
-        echo '</div>';
+		// Build category <option> list once and print it as a hidden template (escaped).
+		$cat_options_html = self::get_category_options_html();
 
-        // List table
-        echo '<table class="wp-list-table widefat fixed striped table-view-list posts itpwc-table" data-cat-options="'.esc_attr($cat_options_html).'">';
-        echo '  <thead><tr>'
-            .'<th class="column-thumb">'.esc_html__('Image', 'images-to-woo-products').'</th>'
-            .'<th class="column-name">'.esc_html__('Name', 'images-to-woo-products').'</th>'
-            .'<th class="column-cat">'.esc_html__('Categories', 'images-to-woo-products').'</th>'
-            .'<th class="column-vis">'.esc_html__('Visibility', 'images-to-woo-products').'</th>'
-            .'<th class="column-status">'.esc_html__('Status', 'images-to-woo-products').'</th>'
-            .'<th class="column-price">'.esc_html__('Price', 'images-to-woo-products').'</th>'
-            .'<th class="column-sku">'.esc_html__('SKU prefix / preview', 'images-to-woo-products').'</th>'
-            .'<th class="column-tags">'.esc_html__('Tags', 'images-to-woo-products').'</th>'
-            .'</tr></thead>';
-        echo '  <tbody id="itpwc_rows"></tbody>';
-        echo '</table>';
+		echo '<div class="wrap">';
+		echo '<h1>' . esc_html__( 'Images → Woo Products (Uploader)', 'images-to-woo-products' ) . '</h1>';
+		echo '<p>' . esc_html__( 'Select or upload images, then convert them into products.', 'images-to-woo-products' ) . '</p>';
 
-        echo '<div class="itpwc-actions">';
-        submit_button( __('Create products now', 'images-to-woo-products'), 'primary button-hero', 'itpwc_run', false );
-        echo '<span class="spinner is-active" id="itpwc_spinner" style="display:none"></span>';
-        echo '</div>';
+		echo '<form method="post" id="itpwc_form">';
+		wp_nonce_field( 'itpwc_run_nonce' );
 
-        echo '</form>';
+		echo '<input type="hidden" id="itpwc_attachment_ids" name="itpwc_attachment_ids" value="" />';
+		echo '<input type="hidden" id="itpwc_per_image" name="itpwc_per_image" value="{}" />';
 
-        echo '<hr />';
-        echo '<h2>'.esc_html__('Notes', 'images-to-woo-products').'</h2>';
-        echo '<ul style="list-style:disc;padding-left:20px">'
-            .'<li>'.esc_html__('All editable fields are per row. Leave “— No category —” to inherit global categories.', 'images-to-woo-products').'</li>'
-            .'<li>'.esc_html__('Name derives from image filename. Products are Simple.', 'images-to-woo-products').'</li>'
-            .'<li>'.esc_html__('If an image is already used as a featured image of a product, it is skipped.', 'images-to-woo-products').'</li>'
-            .'</ul>';
+		echo '<div class="itpwc-card itpwc-settings">';
+		echo '<h2>' . esc_html__( 'Settings', 'images-to-woo-products' ) . '</h2>';
+		echo '<div class="itpwc-grid-compact">';
 
-        echo '</div>';
+		echo '<div class="itpwc-setting"><label><input type="checkbox" name="itpwc_use_sku" value="1" /> ' .
+			esc_html__( 'Auto-generate SKU (prefix + incremental)', 'images-to-woo-products' ) .
+		'</label></div>';
 
-        echo '<script>window.ITPWC_NEXT_SEED='.intval($next_seed).';</script>';
-    }
+		echo '<div class="itpwc-setting"><label>' . esc_html__( 'SKU Prefix', 'images-to-woo-products' ) . '</label>' .
+			'<input type="text" name="itpwc_sku_prefix" value="" class="regular-text" /></div>';
 
-    /** Footer assets */
-    public static function print_inline_assets(){
-        if ( ! function_exists('get_current_screen') ) return;
-        $screen = get_current_screen();
-        if ( ! $screen || $screen->id !== 'product_page_imtowoopro-images-products') return;
-        if ( function_exists('wp_enqueue_media') ) wp_enqueue_media();
-        wp_enqueue_script('jquery');
+		echo '<div class="itpwc-setting"><label>' . esc_html__( 'Global categories (optional)', 'images-to-woo-products' ) . '</label>' .
+			'<select name="itpwc_global_cats[]" multiple="multiple" style="min-width:260px">' .
+			'<option value="0">' . esc_html__( '— No category —', 'images-to-woo-products' ) . '</option>' .
+			wp_kses_post( $cat_options_html ) .
+			'</select></div>';
 
-        echo '<style>
-        .itpwc-toolbar{display:flex;gap:12px;align-items:center;margin:12px 0}
-        .itpwc-count{color:#555}
-        .itpwc-card{background:#fff;border:1px solid #dcdcde;border-radius:10px;padding:12px;box-shadow:0 1px 2px rgba(0,0,0,.04);margin-top:6px}
-        .itpwc-grid-compact{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
-        .itpwc-setting .description{margin:.25rem 0 0;color:#666}
-        .itpwc-label{display:block;margin:6px 0 4px;font-weight:600}
-        .itpwc-select-multi{width:100%;}
-        .itpwc-compact-select{max-height:140px;overflow:auto}
-        .itpwc-actions{margin-top:16px;display:flex;align-items:center;gap:12px}
-        .itpwc-table .column-thumb{width:64px}
-        .itpwc-table .column-cat{width:260px}
-        .itpwc-table .column-vis{width:150px}
-        .itpwc-table .column-status{width:120px}
-        .itpwc-table .column-price{width:120px}
-        .itpwc-table .column-sku{width:260px}
-        .itpwc-table .column-tags{width:220px}
-        .itpwc-row-img{width:48px;height:48px;object-fit:cover;border-radius:4px;border:1px solid #e0e0e0}
-        .itpwc-miniinput{width:100%}
-        .itpwc-sku-flex{display:flex;gap:6px;align-items:center}
-        .itpwc-sku-preview{opacity:.7}
-        .itpwc-multi{min-height:34px;max-height:120px;overflow:auto}
-        @media (max-width:1300px){ .itpwc-grid-compact{grid-template-columns:1fr 1fr} }
-        @media (max-width:900px){ .itpwc-grid-compact{grid-template-columns:1fr} }
-        </style>';
+		echo '</div></div>'; // .itpwc-grid-compact / .itpwc-card
 
-        echo '<script type="text/javascript">'. self::inline_js() .'</script>';
-    }
+		echo '<div class="itpwc-toolbar">';
+		echo '<button type="button" class="button button-secondary" id="itpwc_select_btn">' . esc_html__( 'Select / Upload images', 'images-to-woo-products' ) . '</button> ';
+	echo '<button type="button" class="button" id="itpwc_clear_btn">' . esc_html__( 'Clear selection', 'images-to-woo-products' ) . '</button>';
+		echo '</div>';
 
-    /** Category options HTML reused in rows & settings */
-    private static function get_category_options_html(){
-        $html = '';
-        $terms = get_terms([ 'taxonomy'=>'product_cat', 'hide_empty'=>false, 'parent'=>0 ]);
-        if ( is_wp_error($terms) ) return $html;
-        foreach ($terms as $t) { $html .= self::cat_option_branch_html($t, 0); }
-        return $html;
-    }
-    private static function cat_option_branch_html($term, $depth){
-        $pad = str_repeat('— ', $depth);
-        $html = '<option value="'.intval($term->term_id).'">'.esc_html($pad.$term->name).'</option>';
-        $children = get_terms([ 'taxonomy'=>'product_cat', 'hide_empty'=>false, 'parent'=>$term->term_id ]);
-        if ( is_wp_error($children) || empty($children) ) return $html;
-        foreach ($children as $c) { $html .= self::cat_option_branch_html($c, $depth+1); }
-        return $html;
-    }
+		// Table (без data- атрибути с HTML вътре).
+		echo '<table class="wp-list-table widefat fixed striped itpwc-table">';
+		echo '<thead><tr>' .
+			'<th class="column-thumb">' . esc_html__( 'Image', 'images-to-woo-products' ) . '</th>' .
+			'<th class="column-name">' . esc_html__( 'Name', 'images-to-woo-products' ) . '</th>' .
+			'<th class="column-sku">' . esc_html__( 'SKU', 'images-to-woo-products' ) . '</th>' .
+			'<th class="column-cats">' . esc_html__( 'Categories', 'images-to-woo-products' ) . '</th>' .
+		'</tr></thead><tbody id="the-list"></tbody></table>';
 
-    /** Create products */
-    private static function create_products($attachment_ids, $per, $use_sku, $global_prefix, $global_cats){
-        $created=0; $skipped=0;
-        foreach ($attachment_ids as $attachment_id){
-            $att = get_post($attachment_id);
-            if ( ! $att || 'attachment' !== $att->post_type ) { $skipped++; continue; }
-            $mime = get_post_mime_type($attachment_id);
-            if ( strpos((string)$mime, 'image/') !== 0 ) { $skipped++; continue; }
+		echo '<p class="submit"><button type="submit" name="itpwc_run" class="button button-primary">' . esc_html__( 'Create Products', 'images-to-woo-products' ) . '</button></p>';
 
-            // Skip if image already used as featured
-            $existing = get_posts([
-                'post_type'=>'product', 'meta_key'=>'_thumbnail_id', 'meta_value'=>$attachment_id,
-                'fields'=>'ids', 'posts_per_page'=>1
-            ]);
-            if ( $existing ) { $skipped++; continue; }
+		// Скрит шаблон за <option>-ите на категориите (правилно пречистен).
+		echo '<div id="itpwc-cat-options-tpl" style="display:none">' . wp_kses_post( $cat_options_html ) . '</div>';
 
-            $file_path = get_attached_file($attachment_id);
-            $basename = $file_path ? pathinfo($file_path, PATHINFO_FILENAME) : ('product-'.$attachment_id);
-            $title = ucwords(trim(str_replace(['-','_'], ' ', $basename)));
+		// Inline JS (WordPress helper печата правилен <script>).
+		echo wp_print_inline_script_tag( self::inline_js(), array( 'type' => 'text/javascript' ) );
 
-            $row = isset($per[$attachment_id]) && is_array($per[$attachment_id]) ? $per[$attachment_id] : [];
-            // Per‑row categories: array of IDs
-            $cats_row = [];
-            if ( isset($row['cats']) ) {
-                $cats_row = array_values(array_filter(array_map('intval', (array)$row['cats'])));
-            } elseif ( isset($row['cat']) && $row['cat'] ) { // backward compat
-                $cats_row = [ intval($row['cat']) ];
-            }
-            $vis       = isset($row['vis']) ? sanitize_text_field($row['vis']) : 'visible';
-            $status    = isset($row['status']) ? sanitize_text_field($row['status']) : 'publish';
-            $price     = isset($row['price']) && $row['price'] !== '' ? wc_format_decimal($row['price']) : '0';
-            $tags_raw  = isset($row['tags']) ? $row['tags'] : '';
-            $tags_arr  = array_filter(array_map('trim', explode(',', (string)$tags_raw)));
-            $pref_row  = isset($row['sku_prefix']) ? sanitize_text_field($row['sku_prefix']) : '';
+		echo '</form></div>'; // .wrap
+	}
 
-            $product = new WC_Product_Simple();
-            $product->set_name($title);
-            $product->set_status($status);
-            $product->set_catalog_visibility($vis);
-            $product->set_manage_stock(false);
-            $product->set_image_id($attachment_id);
+	/** Build <option> list of product categories (escaped later with wp_kses_post). */
+	private static function get_category_options_html() {
+		$terms = get_terms(
+			array(
+				'taxonomy'   => 'product_cat',
+				'hide_empty' => false,
+			)
+		);
 
-            // Categories: per‑row (if any) else global multi
-            if ( !empty($cats_row) ) {
-                $product->set_category_ids($cats_row);
-            } elseif ( !empty($global_cats) ) {
-                $product->set_category_ids($global_cats);
-            }
+		if ( is_wp_error( $terms ) || empty( $terms ) ) {
+			return '';
+		}
 
-            $product->set_regular_price( $price );
+		$out = '';
+		foreach ( $terms as $t ) {
+			$out .= sprintf(
+				'<option value="%1$d">%2$s</option>',
+				absint( $t->term_id ),
+				esc_html( $t->name )
+			);
+		}
+		return $out;
+	}
 
-            if ( $use_sku ){
-                $sku = self::next_sequential_sku( $pref_row !== '' ? $pref_row : $global_prefix );
-                $product->set_sku($sku);
-            }
+	/** Core bulk creator */
+	private static function create_products( $ids, $per_image, $use_sku, $global_pref, $global_cats ) {
+		$created = 0;
+		$skipped = 0;
 
-            $product_id = $product->save();
-            if ($product_id){
-                self::regenerate_attachment_sizes($attachment_id);
-                if ( !empty($tags_arr) ) { wp_set_object_terms($product_id, $tags_arr, 'product_tag', true); }
-                $created++;
-            }
-        }
-        return compact('created','skipped');
-    }
+		foreach ( (array) $ids as $att_id ) {
+			$att_id = absint( $att_id );
+			if ( ! $att_id ) {
+				$skipped++;
+				continue;
+			}
 
-    /** Persistent sequential SKU generator */
-    private static function next_sequential_sku($prefix = ''){
-        $n = (int) get_option('itpwc_sku_next', 1);
-        $max_attempts = 100000;
-        do {
-            $sku = $prefix . str_pad((string)$n, 5, '0', STR_PAD_LEFT);
-            $n++;
-        } while ( wc_get_product_id_by_sku($sku) && --$max_attempts > 0 );
-        update_option('itpwc_sku_next', $n, false);
-        return $sku;
-    }
+			$img = get_post( $att_id );
+			if ( ! $img || 'attachment' !== $img->post_type ) {
+				$skipped++;
+				continue;
+			}
 
-    /** Ensure thumbnails exist */
-    private static function regenerate_attachment_sizes($attachment_id){
-        $file = get_attached_file($attachment_id);
-        if ( ! $file || ! file_exists($file) ) return;
-        if ( function_exists('wp_update_image_subsizes') ) { wp_update_image_subsizes($attachment_id); return; }
-        $metadata = wp_generate_attachment_metadata($attachment_id, $file);
-        if ( ! empty($metadata) ) { wp_update_attachment_metadata($attachment_id, $metadata); }
-    }
+			$title = get_the_title( $att_id );
+			if ( ! $title ) {
+				$file  = get_attached_file( $att_id );
+				$title = $file ? sanitize_text_field( wp_basename( $file ) ) : 'Image';
+			}
 
-    /** Inline JS */
-    private static function inline_js(){
-        return <?php ob_start(); ?>
+			$pid = wp_insert_post(
+				array(
+					'post_title'   => $title,
+					'post_status'  => 'publish',
+					'post_type'    => 'product',
+					'post_content' => '',
+				),
+				true
+			);
+
+			if ( is_wp_error( $pid ) ) {
+				$skipped++;
+				continue;
+			}
+
+			wp_set_object_terms( $pid, 'simple', 'product_type', false );
+			set_post_thumbnail( $pid, $att_id );
+
+			if ( ! empty( $global_cats ) ) {
+				wp_set_object_terms( $pid, $global_cats, 'product_cat', true );
+			}
+
+			if ( $use_sku ) {
+				$sku_prefix = $global_pref ? $global_pref : 'SKU';
+				$sku_val    = $sku_prefix . '-' . $pid;
+				update_post_meta( $pid, '_sku', sanitize_text_field( $sku_val ) );
+			}
+
+			$created++;
+		}
+
+		return array(
+			'created' => $created,
+			'skipped' => $skipped,
+		);
+	}
+
+	/** Admin inline JS */
+	private static function inline_js() {
+		ob_start();
+		?>
 (function($){
-    var frame, idsField, perField, rowsBody, per = {}, seed = window.ITPWC_NEXT_SEED || 1;
-    $(function(){
-        idsField = $('#itpwc_attachment_ids');
-        perField = $('#itpwc_per_image');
-        rowsBody = $('#itpwc_rows');
+	const frame = wp.media({ multiple: true, title: '<?php echo esc_js( __( 'Select images', 'images-to-woo-products' ) ); ?>' });
+	const $ids   = $('#itpwc_attachment_ids');
+	const $per   = $('#itpwc_per_image');
+	const $table = $('.itpwc-table tbody');
 
-        $('#itpwc_select_btn').on('click', function(e){
-            e.preventDefault();
-            if (!frame){
-                frame = wp.media({ title: 'Select or Upload Images', button: { text: 'Use these images' }, multiple: true });
-                frame.on('select', function(){
-                    var selection = frame.state().get('selection');
-                    selection.each(function(att){
-                        var a = att.toJSON();
-                        addRow(a.id, a.filename || a.title, (a.sizes && a.sizes.thumbnail) ? a.sizes.thumbnail.url : a.url);
-                    });
-                    syncHidden();
-                });
-            }
-            frame.open();
-        });
+	function catOptionsHTML(){
+		// Взимаме безопасно пречистения шаблон от скрития контейнер.
+		const holder = document.getElementById('itpwc-cat-options-tpl');
+		return holder ? holder.innerHTML : '';
+	}
 
-        $('#itpwc_clear_btn').on('click', function(e){ e.preventDefault(); per = {}; rowsBody.empty(); syncHidden(); });
-        rowsBody.on('click', '.itpwc-remove', function(){ var tr=$(this).closest('tr'); var id=tr.data('id'); delete per[id]; tr.remove(); syncHidden(); });
+	$('#itpwc_select_btn').on('click', function(e){
+		e.preventDefault();
+		frame.off('select').on('select', function(){
+			const sel = frame.state().get('selection').toJSON() || [];
+			const ids = sel.map(i => i.id);
+			$ids.val(ids.join(','));
+			$table.empty();
+			const catOpts = catOptionsHTML();
 
-        // Per‑row listeners
-        rowsBody.on('change', '.itpwc-cats', function(){ ensureRow(rowId(this)).cats = $(this).val() || []; syncHidden(false); });
-        rowsBody.on('change', '.itpwc-vis', function(){ ensureRow(rowId(this)).vis = $(this).val(); syncHidden(false); });
-        rowsBody.on('change', '.itpwc-status', function(){ ensureRow(rowId(this)).status = $(this).val(); syncHidden(false); });
-        rowsBody.on('input',  '.itpwc-price', function(){ ensureRow(rowId(this)).price = $(this).val(); syncHidden(false); });
-        rowsBody.on('input',  '.itpwc-prefix', function(){ ensureRow(rowId(this)).sku_prefix = $(this).val(); updateSkuPreview($(this).closest('tr')); syncHidden(false); });
-        rowsBody.on('input',  '.itpwc-tags', function(){ ensureRow(rowId(this)).tags = $(this).val(); syncHidden(false); });
+			sel.forEach(item => {
+				const name = item.title || item.filename || ('#' + item.id);
+				const img  = (item.sizes && item.sizes.thumbnail && item.sizes.thumbnail.url) ? item.sizes.thumbnail.url : item.icon;
+				const row = `
+					<tr>
+						<td class="column-thumb"><img src="${img}" style="max-width:80px;height:auto" alt="thumb"/></td>
+						<td class="column-name"><input type="text" value="${(name || '').replaceAll('"','&quot;')}" class="widefat"/></td>
+						<td class="column-sku"><input type="text" value="" class="regular-text"/></td>
+						<td class="column-cats"><select multiple="multiple" style="min-width:200px">${catOpts}</select></td>
+					</tr>`;
+				$table.append(row);
+			});
+		});
+		frame.open();
+	});
 
-        function rowId(el){ return $(el).closest('tr').data('id'); }
-        function ensureRow(id){ if(!per[id]) per[id] = { cats:[], vis:'visible', status:'publish', price:'0', sku_prefix:'', tags:'' }; return per[id]; }
+	$('#itpwc_clear_btn').on('click', function(e){
+		e.preventDefault();
+		$ids.val('');
+		$per.val('{}');
+		$table.empty();
+	});
 
-        function addRow(id, name, url){
-            if (rowsBody.find('tr[data-id="'+id+'"]').length) return;
-            ensureRow(id);
-            var idx = rowsBody.find('tr').length; // preview index
-            var html = '<tr data-id="'+id+'">'
-                + '<td class="column-thumb"><div style="position:relative"><img class="itpwc-row-img" src="'+url+'" alt="" />'
-                + '<span class="itpwc-remove dashicons dashicons-no-alt" title="Remove" style="position:absolute;top:-8px;right:-8px;background:#ca4a1f;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center"></span>'
-                + '</div></td>'
-                + '<td class="column-name"><strong>'+ escapeHtml(String(name).replace(/\.[^/.]+$/, "").replace(/[\-_]/g,' ')) +'</strong></td>'
-                + '<td class="column-cat">'
-                    + '<select multiple size="4" class="itpwc-cats itpwc-miniinput itpwc-multi">'
-                    + '<option value="0">— No category —</option>' + $('.itpwc-table').attr('data-cat-options')
-                    + '</select>'
-                + '</td>'
-                + '<td class="column-vis"><select class="itpwc-vis itpwc-miniinput">'
-                    + '<option value="visible">Visible</option>'
-                    + '<option value="catalog">Catalog only</option>'
-                    + '<option value="search">Search only</option>'
-                    + '<option value="hidden">Hidden</option>'
-                  + '</select></td>'
-                + '<td class="column-status"><select class="itpwc-status itpwc-miniinput">'
-                    + '<option value="publish" selected>Publish</option>'
-                    + '<option value="draft">Draft</option>'
-                  + '</select></td>'
-                + '<td class="column-price"><input type="number" step="0.01" min="0" class="itpwc-price itpwc-miniinput" placeholder="0.00" value="0" /></td>'
-                + '<td class="column-sku"><div class="itpwc-sku-flex">'
-                    + '<input type="text" class="itpwc-prefix" placeholder="SKU prefix" style="width:130px" />'
-                    + '<span class="itpwc-sku-preview">'+ skuPreview('', idx) +'</span>'
-                  + '</div><div class="description">Prefix overrides the global one. Number is auto.</div></td>'
-                + '<td class="column-tags"><input type="text" class="itpwc-tags itpwc-miniinput" placeholder="tags: portrait, oil" /></td>'
-              + '</tr>';
-            rowsBody.append(html);
-        }
-
-        function skuPreview(prefix, index){
-            var num = (seed + index).toString();
-            while (num.length < 5) num = '0'+num;
-            return (prefix||'') + num;
-        }
-        function updateSkuPreview(tr){
-            var index = tr.index();
-            var prefix = tr.find('.itpwc-prefix').val() || '';
-            tr.find('.itpwc-sku-preview').text( skuPreview(prefix, index) );
-        }
-
-        function syncHidden(updateCountToo=true){
-            var ids=[]; rowsBody.find('tr').each(function(){ ids.push($(this).data('id')); updateSkuPreview($(this)); });
-            idsField.val(ids.join(','));
-            perField.val(JSON.stringify(per));
-            if (updateCountToo) $('#itpwc_count').text(ids.length);
-        }
-
-        function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[m]); }); }
-    });
+	// Serialize per-image data on submit.
+	$('#itpwc_form').on('submit', function(){
+		const data = {};
+		$table.find('tr').each(function(idx, tr){
+			const $tr = $(tr);
+			data[idx] = {
+				name: $tr.find('.column-name input').val() || '',
+				sku:  $tr.find('.column-sku input').val() || '',
+				cats: ($tr.find('.column-cats select').val() || []).map(v => parseInt(v, 10) || 0)
+			};
+		});
+		$per.val(JSON.stringify(data));
+	});
 })(jQuery);
-<?php $itpwc_html_block = ob_get_clean(); ?>
-    }
+		<?php
+		return (string) ob_get_clean();
+	}
 }
-endif;
 
-add_action('plugins_loaded', ['ITPWC_Uploader','boot']);
+endif;
