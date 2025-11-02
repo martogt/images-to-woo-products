@@ -7,7 +7,7 @@
  * Requires PHP: 7.4
  * Author: Marv
  * License: GPLv2 or later
- * Update URI: https://github.com/USERNAME/im-to-woo-pro   // ВАЖНО за не-WP.org плъгини
+ * Update URI: https://github.com/USERNAME/images-to-woo-products   // ВАЖНО за не-WP.org плъгини
  */
 
 
@@ -25,8 +25,8 @@ final class ITPWC_Uploader {
     public static function add_menu(){
         add_submenu_page(
             'edit.php?post_type=product',
-            __('Images → Products', 'im-to-woo-pro'),
-            __('Images → Products', 'im-to-woo-pro'),
+            __('Images → Products', 'images-to-woo-products'),
+            __('Images → Products', 'images-to-woo-products'),
             'manage_woocommerce',
             'imtowoopro-images-products',
             [__CLASS__, 'render_admin_page']
@@ -52,11 +52,11 @@ final class ITPWC_Uploader {
             $global_cats  = array_values(array_filter($global_cats)); // remove zeros
 
             if ( empty($ids) ) {
-                echo '<div class="notice notice-error"><p>'.esc_html__('Please select or upload at least one image.', 'im-to-woo-pro').'</p></div>';
+                echo '<div class="notice notice-error"><p>'.esc_html__('Please select or upload at least one image.', 'images-to-woo-products').'</p></div>';
             } else {
                 $result = self::create_products($ids, $per_image, $use_sku, $global_pref, $global_cats);
                 echo '<div class="notice notice-success"><p>'
-                    . sprintf( esc_html__('Done: created %d products, skipped %d.', 'im-to-woo-pro'), intval($result['created']), intval($result['skipped']) )
+                    . sprintf( esc_html__('Done: created %d products, skipped %d.', 'images-to-woo-products'), intval($result['created']), intval($result['skipped']) )
                     . '</p></div>';
             }
         }
@@ -66,8 +66,8 @@ final class ITPWC_Uploader {
         $next_seed = (int) get_option('itpwc_sku_next', 1);
 
         echo '<div class="wrap">';
-        echo '<h1>'.esc_html__('Images → Woo Products (Uploader)', 'im-to-woo-pro').'</h1>';
-        echo '<p>'.esc_html__('Select or upload images, then fill per-product fields below. The interface mirrors the Products list.', 'im-to-woo-pro').'</p>';
+        echo '<h1>'.esc_html__('Images → Woo Products (Uploader)', 'images-to-woo-products').'</h1>';
+        echo '<p>'.esc_html__('Select or upload images, then fill per-product fields below. The interface mirrors the Products list.', 'images-to-woo-products').'</p>';
 
         echo '<form method="post" id="itpwc_form">';
         wp_nonce_field('itpwc_run_nonce');
@@ -76,26 +76,26 @@ final class ITPWC_Uploader {
 
         // SETTINGS card (top)
         echo '<div class="itpwc-card itpwc-settings">';
-        echo '<h2>'.esc_html__('Settings', 'im-to-woo-pro').'</h2>';
+        echo '<h2>'.esc_html__('Settings', 'images-to-woo-products').'</h2>';
         echo '<div class="itpwc-grid-compact">';
         echo '  <div class="itpwc-setting">'
-            .'<label class="itpwc-label"><input type="checkbox" name="itpwc_use_sku" value="1" checked> '.esc_html__('Auto-generate SKU numbers', 'im-to-woo-pro').'</label>'
-            .'<p class="description">'.esc_html__('Sequential and persisted between runs. Live preview shown in rows.', 'im-to-woo-pro').'</p>'
+            .'<label class="itpwc-label"><input type="checkbox" name="itpwc_use_sku" value="1" checked> '.esc_html__('Auto-generate SKU numbers', 'images-to-woo-products').'</label>'
+            .'<p class="description">'.esc_html__('Sequential and persisted between runs. Live preview shown in rows.', 'images-to-woo-products').'</p>'
             .'</div>';
         echo '  <div class="itpwc-setting">'
-            .'<label class="itpwc-label">'.esc_html__('Global SKU prefix (optional)', 'im-to-woo-pro').'</label>'
+            .'<label class="itpwc-label">'.esc_html__('Global SKU prefix (optional)', 'images-to-woo-products').'</label>'
             .'<input type="text" name="itpwc_sku_prefix" value="" class="regular-text" placeholder="ART-" />'
             .'</div>';
         echo '  <div class="itpwc-setting">'
-            .'<label class="itpwc-label">'.esc_html__('Global categories (optional)', 'im-to-woo-pro').'</label>'
+            .'<label class="itpwc-label">'.esc_html__('Global categories (optional)', 'images-to-woo-products').'</label>'
             .'<select name="itpwc_global_cats[]" multiple size="5" class="itpwc-select-multi itpwc-compact-select">'
-            .'<option value="0">'.esc_html__('— No category —','itpwc').'</option>'
+            .'<option value="0">'.esc_html__('— No category —', 'images-to-woo-products').'</option>'
             .$cat_options_html
             .'</select>'
-            .'<p class="description">'.esc_html__('Applied to rows that keep “— No category —”. Per-row selection has priority.', 'im-to-woo-pro').'</p>'
+            .'<p class="description">'.esc_html__('Applied to rows that keep “— No category —”. Per-row selection has priority.', 'images-to-woo-products').'</p>'
             .'</div>';
         echo '  <div class="itpwc-setting">'
-            .'<label class="itpwc-label">'.esc_html__('Next SKU number (preview)', 'im-to-woo-pro').'</label>'
+            .'<label class="itpwc-label">'.esc_html__('Next SKU number (preview)', 'images-to-woo-products').'</label>'
             .'<input type="text" value="'.esc_attr( str_pad((string)$next_seed, 5, '0', STR_PAD_LEFT) ).'" class="regular-text" disabled />'
             .'</div>';
         echo '</div>'; // compact grid
@@ -103,39 +103,39 @@ final class ITPWC_Uploader {
 
         // Toolbar
         echo '<div class="itpwc-toolbar">';
-        echo '<button type="button" class="button button-secondary button-hero" id="itpwc_select_btn">'.esc_html__('Select / Upload images', 'im-to-woo-pro').'</button> ';
-        echo '<button type="button" class="button" id="itpwc_clear_btn">'.esc_html__('Clear selection', 'im-to-woo-pro').'</button>';
-        echo '<span class="itpwc-count"><strong id="itpwc_count">0</strong> '.esc_html__('images selected', 'im-to-woo-pro').'</span>';
+        echo '<button type="button" class="button button-secondary button-hero" id="itpwc_select_btn">'.esc_html__('Select / Upload images', 'images-to-woo-products').'</button> ';
+        echo '<button type="button" class="button" id="itpwc_clear_btn">'.esc_html__('Clear selection', 'images-to-woo-products').'</button>';
+        echo '<span class="itpwc-count"><strong id="itpwc_count">0</strong> '.esc_html__('images selected', 'images-to-woo-products').'</span>';
         echo '</div>';
 
         // List table
         echo '<table class="wp-list-table widefat fixed striped table-view-list posts itpwc-table" data-cat-options="'.esc_attr($cat_options_html).'">';
         echo '  <thead><tr>'
-            .'<th class="column-thumb">'.esc_html__('Image','itpwc').'</th>'
-            .'<th class="column-name">'.esc_html__('Name','itpwc').'</th>'
-            .'<th class="column-cat">'.esc_html__('Categories','itpwc').'</th>'
-            .'<th class="column-vis">'.esc_html__('Visibility','itpwc').'</th>'
-            .'<th class="column-status">'.esc_html__('Status','itpwc').'</th>'
-            .'<th class="column-price">'.esc_html__('Price','itpwc').'</th>'
-            .'<th class="column-sku">'.esc_html__('SKU prefix / preview','itpwc').'</th>'
-            .'<th class="column-tags">'.esc_html__('Tags','itpwc').'</th>'
+            .'<th class="column-thumb">'.esc_html__('Image', 'images-to-woo-products').'</th>'
+            .'<th class="column-name">'.esc_html__('Name', 'images-to-woo-products').'</th>'
+            .'<th class="column-cat">'.esc_html__('Categories', 'images-to-woo-products').'</th>'
+            .'<th class="column-vis">'.esc_html__('Visibility', 'images-to-woo-products').'</th>'
+            .'<th class="column-status">'.esc_html__('Status', 'images-to-woo-products').'</th>'
+            .'<th class="column-price">'.esc_html__('Price', 'images-to-woo-products').'</th>'
+            .'<th class="column-sku">'.esc_html__('SKU prefix / preview', 'images-to-woo-products').'</th>'
+            .'<th class="column-tags">'.esc_html__('Tags', 'images-to-woo-products').'</th>'
             .'</tr></thead>';
         echo '  <tbody id="itpwc_rows"></tbody>';
         echo '</table>';
 
         echo '<div class="itpwc-actions">';
-        submit_button( __('Create products now', 'im-to-woo-pro'), 'primary button-hero', 'itpwc_run', false );
+        submit_button( __('Create products now', 'images-to-woo-products'), 'primary button-hero', 'itpwc_run', false );
         echo '<span class="spinner is-active" id="itpwc_spinner" style="display:none"></span>';
         echo '</div>';
 
         echo '</form>';
 
         echo '<hr />';
-        echo '<h2>'.esc_html__('Notes', 'im-to-woo-pro').'</h2>';
+        echo '<h2>'.esc_html__('Notes', 'images-to-woo-products').'</h2>';
         echo '<ul style="list-style:disc;padding-left:20px">'
-            .'<li>'.esc_html__('All editable fields are per row. Leave “— No category —” to inherit global categories.', 'im-to-woo-pro').'</li>'
-            .'<li>'.esc_html__('Name derives from image filename. Products are Simple.', 'im-to-woo-pro').'</li>'
-            .'<li>'.esc_html__('If an image is already used as a featured image of a product, it is skipped.', 'im-to-woo-pro').'</li>'
+            .'<li>'.esc_html__('All editable fields are per row. Leave “— No category —” to inherit global categories.', 'images-to-woo-products').'</li>'
+            .'<li>'.esc_html__('Name derives from image filename. Products are Simple.', 'images-to-woo-products').'</li>'
+            .'<li>'.esc_html__('If an image is already used as a featured image of a product, it is skipped.', 'images-to-woo-products').'</li>'
             .'</ul>';
 
         echo '</div>';
