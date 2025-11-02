@@ -1,0 +1,72 @@
+:root{
+  --imtw-blue-900:#1f64b5;
+  --imtw-blue-800:#2b78d1;
+  --imtw-blue-700:#3b8ae6;
+  --imtw-blue-050:#f4f8ff;
+  --imtw-border:#d7e6ff;
+  --radius:10px;
+}
+
+/* Scope EVERYTHING under our plugin screen only */
+body.wp-admin .wrap.imtowoo-wrap .imtowoo-card{ 
+  background: var(--imtw-blue-050);
+  border: 1px solid var(--imtw-border);
+  border-radius: calc(var(--radius) + 2px);
+  overflow: hidden;
+  box-shadow: 0 1px 0 rgba(0,0,0,.02), 0 8px 20px rgba(31,100,181,.08) inset;
+  margin-top: 12px;
+}
+
+/* Blue header bar (decorative) */
+.imtowoo-wrap .imtw-header{
+  display:grid;
+  grid-template-columns: 1.2fr .7fr 1fr .6fr;
+  background: linear-gradient(180deg, var(--imtw-blue-800), var(--imtw-blue-900));
+  color:#fff;
+  font-weight:700;
+  padding:10px 14px;
+  border-bottom:1px solid rgba(255,255,255,.25);
+  border-top-left-radius: calc(var(--radius) + 2px);
+  border-top-right-radius: calc(var(--radius) + 2px);
+}
+
+/* Row skin ONLY for your actual product rows (.itpwc-row) */
+.imtowoo-wrap .itpwc-row.imtowoo-row-skin{
+  padding: 12px 14px;
+  background:#eaf3ff;
+  border-bottom:8px solid var(--imtw-blue-050);
+  margin:0; /* keep layout stable */
+}
+
+/* Inputs inside our rows */
+.imtowoo-wrap .itpwc-row.imtowoo-row-skin input[type="text"],
+.imtowoo-wrap .itpwc-row.imtowoo-row-skin input[type="number"],
+.imtowoo-wrap .itpwc-row.imtowoo-row-skin select{
+  border:1px solid var(--imtw-border);
+  background:#fff;
+  padding:8px 10px;
+  border-radius:8px;
+  max-width: 100%;
+}
+
+/* SKU check icon */
+.imtowoo-wrap .imtowoo-check{
+  width:22px; height:22px; fill:#0f7bff; vertical-align:middle; margin-left:8px;
+}
+
+/* Settings area – DO NOT SQUEEZE */
+.imtowoo-wrap .settings, 
+.imtowoo-wrap .settings *{
+  line-height: 1.4;
+  white-space: normal;
+}
+
+/* Primary button styling */
+.imtowoo-wrap .imtowoo-primary{
+  background: linear-gradient(180deg, var(--imtw-blue-700), var(--imtw-blue-900)) !important;
+  border: none !important;
+  box-shadow: 0 2px 6px rgba(31,100,181,.25) !important;
+  padding: 10px 16px;
+  border-radius: 10px !important;
+  font-weight: 600;
+}
