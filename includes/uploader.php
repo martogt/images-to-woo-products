@@ -95,7 +95,7 @@ final class ITPWC_Uploader {
 		echo '<h2>' . esc_html__( 'Settings', 'images-to-woo-products' ) . '</h2>';
 		echo '<div class="itpwc-grid-compact">';
 
-		echo '<div class="itpwc-setting"><label><input type="checkbox" name="itpwc_use_sku" value="1" /> ' .
+		echo '<div class="itpwc-setting"><label><input type="checkbox" name="itpwc_use_sku" value="1" checked="checked" /> ' .
 			esc_html__( 'Auto-generate SKU (prefix + incremental)', 'images-to-woo-products' ) .
 		'</label></div>';
 
