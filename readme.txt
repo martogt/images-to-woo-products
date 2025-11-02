@@ -1,75 +1,54 @@
 === Images to Woo Products (Uploader Edition) ===
 Contributors: martogt
-Tags: woocommerce, products, images, bulk, upload, sku, gallery
+Tags: woocommerce, bulk, products, uploader, images, media
 Requires at least: 6.0
-Tested up to: 6.8
+Tested up to: 6.8.3
 Requires PHP: 7.4
 Stable tag: 2.3.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Bulk-create WooCommerce products directly from selected images. Per-item fields, auto SKU, multi-category, duplicate detection, and optional onboarding guard.
+Upload or select images and convert them directly into WooCommerce products.
+Each image becomes a new Simple product with its filename as title and the same image as featured image.
 
 == Description ==
+**Images to Woo Products (Uploader Edition)** helps you create dozens of WooCommerce products at once.  
+Upload or select images from the Media Library, choose a category, tags and price, and instantly publish them.
 
-**Images to Woo Products (Uploader Edition)** lets you upload or select multiple images and instantly create **WooCommerce Simple Products** from them — each image becomes a product:
-
-- Product title = image filename (formatted)
-- Featured image = the same file
-- Publish immediately (no drafts)
-- Per-item controls (price, categories, visibility, status, tags, SKU prefix)
-- Global settings (auto-SKU with persisted counter, global categories)
-- Duplicate detection modal (preview existing vs new, choose skip or create)
-- Optional: allow reusing images already used as featured images
-- Optional: disable WooCommerce onboarding redirects (opt-in)
-
-Perfect for artists, galleries, photographers, and anyone who manages image-based product catalogs.
-
-= Highlights =
-* Bulk image → product conversion
-* Clean WooCommerce-style admin UI
-* Auto-increment SKU with optional prefixes (global/per-row)
-* Category multi-select (global and per-row)
-* Clear creation summary: created, skipped (duplicates/used/non-image)
-
-= Privacy =
-The plugin does not track users or send data to external services.
+- Bulk-friendly per-row editor (visibility, SKU, tags, etc.)
+- Automatic SKU generation with prefix
+- Duplicate protection and preview dialog
+- Option to disable WooCommerce onboarding redirects
+- Multi-category and multi-tag support
 
 == Installation ==
-
-1. Upload the `images-to-woo-products` folder to `/wp-content/plugins/`, or install the ZIP from **Plugins → Add New → Upload Plugin**.
-2. Activate **Images to Woo Products (Uploader Edition)**.
-3. Go to **Products → Images → Products** to start.
-
-== Frequently Asked Questions ==
-
-= Will it overwrite existing products? =
-No. If a product with the same title exists, you’ll see a duplicate modal and can choose to skip or create anyway.
-
-= Can I reuse an image already used as featured on another product? =
-Yes — enable the **Allow image reuse** option in the settings (off by default).
-
-= Does it support variable products? =
-This tool creates **Simple Products** only (by design, for speed and clarity).
-
-= Can I set categories globally and per product? =
-Yes. Global categories apply automatically to rows that don’t set their own.
-
-= Does it require the WooCommerce onboarding to be completed? =
-No. There’s an optional setting to disable onboarding redirects and hide the task list.
+1. Upload the `images-to-woo-products` folder to `/wp-content/plugins/`
+2. Activate the plugin from *Plugins → Installed Plugins*
+3. Go to *Products → Images → Products* to start uploading
 
 == Screenshots ==
-1. Main interface (select/upload images and list them in a Woo-style table)
-2. Per-item controls: categories, visibility, status, price, SKU prefix, tags
-3. Result in **Products → All Products** after creation
+1. Uploading interface and per-row editor
+2. Global settings with SKU auto-generation
+3. Example of created products in WooCommerce list
 
 == Changelog ==
-
 = 2.3.2 =
-* Stable release for GitHub / WordPress.org
-* Duplicate detection modal and clear summary notices
-* Optional onboarding redirect guard (opt-in)
-* UI polish, improved validation, and security hardening
+* Added AJAX nonce and capability checks
+* Improved validation for visibility/status
+* Enhanced i18n domain and language files
+* UI/UX fixes and minor optimizations
+
+== Frequently Asked Questions ==
+= Does this plugin support variations? =
+Not yet — it creates only Simple products for now.
+
+= Can I use WebP or SVG images? =
+Yes, as long as your WordPress allows them. WebP is supported natively in 6.2+, SVG via plugin.
 
 == Upgrade Notice ==
-2.3.2 — Stable release. Includes duplicate modal, onboarding guard (opt-in), and UI/UX improvements.
+= 2.3.2 =
+Security and compatibility update. Please upgrade immediately.
+
+== License ==
+Released under GPLv2 or later.  
+© 2025 Marv – martogt.
