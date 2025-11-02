@@ -5,9 +5,7 @@
  * @package images-to-woo-products
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
+if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 if ( ! class_exists( 'ITPWC_Uploader' ) ) :
 
@@ -68,12 +66,24 @@ final class ITPWC_Uploader {
 			}
 		}
 
-		// Build category <option> list once and print it as a hidden template (escaped).
+		// Build category <option> list once.
 		$cat_options_html = self::get_category_options_html();
+		$allowed_option   = array( 'option' => array( 'value' => true, 'selected' => true ) );
 
 		echo '<div class="wrap">';
 		echo '<h1>' . esc_html__( 'Images → Woo Products (Uploader)', 'images-to-woo-products' ) . '</h1>';
 		echo '<p>' . esc_html__( 'Select or upload images, then convert them into products.', 'images-to-woo-products' ) . '</p>';
+
+		// Simple layout CSS.
+		echo '<style>
+			.itpwc-grid-compact{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:12px 0}
+			.itpwc-setting{display:flex;align-items:center;gap:8px}
+			.itpwc-toolbar{margin:12px 0}
+			.itpwc-table .column-thumb{width:100px}
+			.itpwc-table .column-name{width:35%}
+			.itpwc-table .column-sku{width:20%}
+			.itpwc-table .column-cats{width:30%}
+		</style>';
 
 		echo '<form method="post" id="itpwc_form">';
 		wp_nonce_field( 'itpwc_run_nonce' );
@@ -89,23 +99,22 @@ final class ITPWC_Uploader {
 			esc_html__( 'Auto-generate SKU (prefix + incremental)', 'images-to-woo-products' ) .
 		'</label></div>';
 
-		echo '<div class="itpwc-setting"><label>' . esc_html__( 'SKU Prefix', 'images-to-woo-products' ) . '</label>' .
-			'<input type="text" name="itpwc_sku_prefix" value="" class="regular-text" /></div>';
+		echo '<div class="itpwc-setting"><label for="itpwc_sku_prefix">' . esc_html__( 'SKU Prefix', 'images-to-woo-products' ) . '</label>' .
+			'<input type="text" id="itpwc_sku_prefix" name="itpwc_sku_prefix" value="" class="regular-text" /></div>';
 
-		echo '<div class="itpwc-setting"><label>' . esc_html__( 'Global categories (optional)', 'images-to-woo-products' ) . '</label>' .
-			'<select name="itpwc_global_cats[]" multiple="multiple" style="min-width:260px">' .
-			'<option value="0">' . esc_html__( '— No category —', 'images-to-woo-products' ) . '</option>' .
-			wp_kses_post( $cat_options_html ) .
+		echo '<div class="itpwc-setting"><label for="itpwc_global_cats">' . esc_html__( 'Global categories (optional)', 'images-to-woo-products' ) . '</label>' .
+			'<select id="itpwc_global_cats" name="itpwc_global_cats[]" multiple="multiple" style="min-width:260px;min-height:96px">' .
+				'<option value="0">' . esc_html__( '— No category —', 'images-to-woo-products' ) . '</option>' .
+				wp_kses( $cat_options_html, $allowed_option ) .
 			'</select></div>';
 
-		echo '</div></div>'; // .itpwc-grid-compact / .itpwc-card
+		echo '</div></div>';
 
 		echo '<div class="itpwc-toolbar">';
 		echo '<button type="button" class="button button-secondary" id="itpwc_select_btn">' . esc_html__( 'Select / Upload images', 'images-to-woo-products' ) . '</button> ';
-	echo '<button type="button" class="button" id="itpwc_clear_btn">' . esc_html__( 'Clear selection', 'images-to-woo-products' ) . '</button>';
+		echo '<button type="button" class="button" id="itpwc_clear_btn">' . esc_html__( 'Clear selection', 'images-to-woo-products' ) . '</button>';
 		echo '</div>';
 
-		// Table (без data- атрибути с HTML вътре).
 		echo '<table class="wp-list-table widefat fixed striped itpwc-table">';
 		echo '<thead><tr>' .
 			'<th class="column-thumb">' . esc_html__( 'Image', 'images-to-woo-products' ) . '</th>' .
@@ -116,23 +125,17 @@ final class ITPWC_Uploader {
 
 		echo '<p class="submit"><button type="submit" name="itpwc_run" class="button button-primary">' . esc_html__( 'Create Products', 'images-to-woo-products' ) . '</button></p>';
 
-		// Скрит шаблон за <option>-ите на категориите (правилно пречистен).
-		echo '<div id="itpwc-cat-options-tpl" style="display:none">' . wp_kses_post( $cat_options_html ) . '</div>';
-
-		// Inline JS (WordPress helper печата правилен <script>).
+		echo '<div id="itpwc-cat-options-tpl" style="display:none">' . wp_kses( $cat_options_html, $allowed_option ) . '</div>';
 		echo wp_print_inline_script_tag( self::inline_js(), array( 'type' => 'text/javascript' ) );
-
-		echo '</form></div>'; // .wrap
+		echo '</form></div>';
 	}
 
-	/** Build <option> list of product categories (escaped later with wp_kses_post). */
+	/** Build <option> list of product categories. */
 	private static function get_category_options_html() {
-		$terms = get_terms(
-			array(
-				'taxonomy'   => 'product_cat',
-				'hide_empty' => false,
-			)
-		);
+		$terms = get_terms( array(
+			'taxonomy'   => 'product_cat',
+			'hide_empty' => false,
+		) );
 
 		if ( is_wp_error( $terms ) || empty( $terms ) ) {
 			return '';
@@ -149,30 +152,96 @@ final class ITPWC_Uploader {
 		return $out;
 	}
 
-	/** Core bulk creator */
+	/** Compare two arrays of IDs as sets (order-insensitive). */
+	private static function same_id_set( $a, $b ) {
+		$a = array_values( array_unique( array_map( 'absint', (array) $a ) ) );
+		$b = array_values( array_unique( array_map( 'absint', (array) $b ) ) );
+		sort( $a ); sort( $b );
+		return $a === $b;
+	}
+
+	/** Find existing product by exact title (non-trash only). */
+	private static function find_existing_product_by_title( $title ) {
+		$existing = get_page_by_title( $title, OBJECT, 'product' );
+		if ( $existing && 'trash' !== get_post_status( $existing ) ) {
+			return $existing;
+		}
+		return null;
+	}
+
+	/** Generate a category prefix like "[POSTERS] ". */
+	private static function category_prefix( $cat_ids ) {
+		$cat_ids = array_values( array_filter( array_map( 'absint', (array) $cat_ids ) ) );
+		if ( empty( $cat_ids ) ) { return ''; }
+		$term = get_term( $cat_ids[0], 'product_cat' );
+		if ( $term && ! is_wp_error( $term ) ) {
+			$slug = strtoupper( sanitize_key( $term->slug ) );
+			$slug = substr( $slug, 0, 10 );
+			return '[' . $slug . '] ';
+		}
+		return '';
+	}
+
+	/**
+	 * Create products.
+	 * Rules:
+	 * - Products in trash do NOT block creation.
+	 * - Same title + same cats => skip.
+	 * - Same title + different cats => create but prefix title with category label.
+	 */
 	private static function create_products( $ids, $per_image, $use_sku, $global_pref, $global_cats ) {
 		$created = 0;
 		$skipped = 0;
 
+		$idx = 0;
+
 		foreach ( (array) $ids as $att_id ) {
 			$att_id = absint( $att_id );
-			if ( ! $att_id ) {
-				$skipped++;
-				continue;
-			}
+			if ( ! $att_id ) { $skipped++; $idx++; continue; }
 
 			$img = get_post( $att_id );
-			if ( ! $img || 'attachment' !== $img->post_type ) {
-				$skipped++;
-				continue;
+			if ( ! $img || 'attachment' !== $img->post_type ) { $skipped++; $idx++; continue; }
+
+			$row = ( isset( $per_image[ $idx ] ) && is_array( $per_image[ $idx ] ) ) ? $per_image[ $idx ] : array();
+
+			// Base title.
+			if ( ! empty( $row['name'] ) ) {
+				$title = sanitize_text_field( $row['name'] );
+			} else {
+				$title = get_the_title( $att_id );
+				if ( ! $title ) {
+					$file  = get_attached_file( $att_id );
+					$title = $file ? sanitize_text_field( wp_basename( $file ) ) : 'Image';
+				}
 			}
 
-			$title = get_the_title( $att_id );
-			if ( ! $title ) {
-				$file  = get_attached_file( $att_id );
-				$title = $file ? sanitize_text_field( wp_basename( $file ) ) : 'Image';
+			// Effective categories = per-row ∪ global.
+			$row_cats      = isset( $row['cats'] ) ? array_map( 'absint', (array) $row['cats'] ) : array();
+			$effective_cats = array_values( array_unique( array_filter( array_merge( $row_cats, $global_cats ) ) ) );
+
+			// Duplicate handling.
+			$existing = self::find_existing_product_by_title( $title );
+
+			if ( $existing ) {
+				$existing_cats = wp_get_post_terms( $existing->ID, 'product_cat', array( 'fields' => 'ids' ) );
+
+				if ( self::same_id_set( $existing_cats, $effective_cats ) ) {
+					// Same name + same cats → skip.
+					$skipped++; $idx++; continue;
+				}
+
+				// Same name + different cats → prefix title with category label and ensure uniqueness.
+				$prefix    = self::category_prefix( $effective_cats );
+				$new_title = $prefix . $title;
+				$counter   = 2;
+				while ( self::find_existing_product_by_title( $new_title ) ) {
+					$new_title = $prefix . $title . ' #' . $counter;
+					$counter++;
+				}
+				$title = $new_title;
 			}
 
+			// Insert product.
 			$pid = wp_insert_post(
 				array(
 					'post_title'   => $title,
@@ -182,97 +251,100 @@ final class ITPWC_Uploader {
 				),
 				true
 			);
-
-			if ( is_wp_error( $pid ) ) {
-				$skipped++;
-				continue;
-			}
+			if ( is_wp_error( $pid ) ) { $skipped++; $idx++; continue; }
 
 			wp_set_object_terms( $pid, 'simple', 'product_type', false );
 			set_post_thumbnail( $pid, $att_id );
 
-			if ( ! empty( $global_cats ) ) {
-				wp_set_object_terms( $pid, $global_cats, 'product_cat', true );
+			if ( ! empty( $effective_cats ) ) {
+				wp_set_object_terms( $pid, $effective_cats, 'product_cat', true );
 			}
 
-			if ( $use_sku ) {
-				$sku_prefix = $global_pref ? $global_pref : 'SKU';
-				$sku_val    = $sku_prefix . '-' . $pid;
-				update_post_meta( $pid, '_sku', sanitize_text_field( $sku_val ) );
+			// SKU.
+			$final_sku = '';
+			if ( ! empty( $row['sku'] ) ) {
+				$maybe = sanitize_text_field( $row['sku'] );
+				if ( function_exists( 'wc_product_has_unique_sku' ) ) {
+					if ( wc_product_has_unique_sku( $maybe, 0 ) ) { $final_sku = $maybe; }
+				} else {
+					$final_sku = $maybe;
+				}
+			}
+			if ( empty( $final_sku ) && $use_sku ) {
+				$prefix    = $global_pref ? $global_pref : 'SKU';
+				$final_sku = $prefix . '-' . $pid;
+			}
+			if ( ! empty( $final_sku ) ) {
+				update_post_meta( $pid, '_sku', $final_sku );
 			}
 
 			$created++;
+			$idx++;
 		}
 
-		return array(
-			'created' => $created,
-			'skipped' => $skipped,
-		);
+		return array( 'created' => $created, 'skipped' => $skipped );
 	}
 
 	/** Admin inline JS */
 	private static function inline_js() {
-		ob_start();
-		?>
+		ob_start(); ?>
 (function($){
-	const frame = wp.media({ multiple: true, title: '<?php echo esc_js( __( 'Select images', 'images-to-woo-products' ) ); ?>' });
-	const $ids   = $('#itpwc_attachment_ids');
-	const $per   = $('#itpwc_per_image');
-	const $table = $('.itpwc-table tbody');
+	let mediaFrame = null;
 
-	function catOptionsHTML(){
-		// Взимаме безопасно пречистения шаблон от скрития контейнер.
+	function getCatOptionsHTML(){
 		const holder = document.getElementById('itpwc-cat-options-tpl');
 		return holder ? holder.innerHTML : '';
 	}
 
-	$('#itpwc_select_btn').on('click', function(e){
-		e.preventDefault();
-		frame.off('select').on('select', function(){
-			const sel = frame.state().get('selection').toJSON() || [];
-			const ids = sel.map(i => i.id);
-			$ids.val(ids.join(','));
-			$table.empty();
-			const catOpts = catOptionsHTML();
+	function openMediaFrame(){
+		if (mediaFrame) { mediaFrame.open(); return; }
+		mediaFrame = wp.media({ multiple: true, title: '<?php echo esc_js( __( 'Select images', 'images-to-woo-products' ) ); ?>' });
+		mediaFrame.on('select', function(){
+			const sel   = mediaFrame.state().get('selection').toJSON() || [];
+			const ids   = sel.map(i => i.id);
+			const $ids  = $('#itpwc_attachment_ids');
+			const $per  = $('#itpwc_per_image');
+			const $tb   = $('.itpwc-table tbody');
+			const cat   = getCatOptionsHTML();
 
-			sel.forEach(item => {
-				const name = item.title || item.filename || ('#' + item.id);
-				const img  = (item.sizes && item.sizes.thumbnail && item.sizes.thumbnail.url) ? item.sizes.thumbnail.url : item.icon;
+			$ids.val(ids.join(','));
+			$per.val('{}');
+			$tb.empty();
+
+			sel.forEach((item) => {
+				const name  = item.title || item.filename || ('#' + item.id);
+				const thumb = (item.sizes && item.sizes.thumbnail && item.sizes.thumbnail.url) ? item.sizes.thumbnail.url : item.icon;
 				const row = `
 					<tr>
-						<td class="column-thumb"><img src="${img}" style="max-width:80px;height:auto" alt="thumb"/></td>
-						<td class="column-name"><input type="text" value="${(name || '').replaceAll('"','&quot;')}" class="widefat"/></td>
+						<td class="column-thumb"><img src="${thumb}" style="max-width:80px;height:auto" alt="thumb"/></td>
+						<td class="column-name"><input type="text" value="${String(name).replace(/"/g,'&quot;')}" class="widefat"/></td>
 						<td class="column-sku"><input type="text" value="" class="regular-text"/></td>
-						<td class="column-cats"><select multiple="multiple" style="min-width:200px">${catOpts}</select></td>
+						<td class="column-cats"><select multiple="multiple" style="min-width:200px">${cat}</select></td>
 					</tr>`;
-				$table.append(row);
+				$tb.append(row);
 			});
 		});
-		frame.open();
-	});
+		mediaFrame.open();
+	}
 
-	$('#itpwc_clear_btn').on('click', function(e){
-		e.preventDefault();
-		$ids.val('');
-		$per.val('{}');
-		$table.empty();
-	});
+	$(document).on('click', '#itpwc_select_btn', function(e){ e.preventDefault(); openMediaFrame(); });
+	$(document).on('click', '#itpwc_clear_btn',  function(e){ e.preventDefault(); $('#itpwc_attachment_ids').val(''); $('#itpwc_per_image').val('{}'); $('.itpwc-table tbody').empty(); });
 
-	// Serialize per-image data on submit.
-	$('#itpwc_form').on('submit', function(){
+	// Serialize per-image data on submit (index-based).
+	$(document).on('submit', '#itpwc_form', function(){
 		const data = {};
-		$table.find('tr').each(function(idx, tr){
+		$('.itpwc-table tbody tr').each(function(idx, tr){
 			const $tr = $(tr);
 			data[idx] = {
 				name: $tr.find('.column-name input').val() || '',
 				sku:  $tr.find('.column-sku input').val() || '',
-				cats: ($tr.find('.column-cats select').val() || []).map(v => parseInt(v, 10) || 0)
+				cats: ($tr.find('.column-cats select').val() || []).map(v => parseInt(v,10) || 0)
 			};
 		});
-		$per.val(JSON.stringify(data));
+		$('#itpwc_per_image').val(JSON.stringify(data));
 	});
 })(jQuery);
-		<?php
+<?php
 		return (string) ob_get_clean();
 	}
 }
