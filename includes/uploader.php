@@ -2,7 +2,7 @@
 /**
  * Admin UI and bulk creator.
  *
- * @package images-to-woo-products
+ * @package images-to-products-for-woocommerce
  */
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
@@ -17,10 +17,10 @@ final class ITPWC_Uploader {
 
 	public static function register_menu() {
 		add_menu_page(
-			esc_html__( 'Images → Products', 'images-to-woo-products' ),
-			esc_html__( 'Images → Products', 'images-to-woo-products' ),
+			esc_html__( 'Images → Products', 'images-to-products-for-woocommerce' ),
+			esc_html__( 'Images → Products', 'images-to-products-for-woocommerce' ),
 			'manage_woocommerce',
-			'images-to-woo-products',
+			'images-to-products-for-woocommerce',
 			array( __CLASS__, 'render_admin_page' ),
 			'dashicons-format-image',
 			58
@@ -51,13 +51,13 @@ final class ITPWC_Uploader {
 			$global_cats = array_values( array_filter( $global_cats ) );
 
 			if ( empty( $ids ) ) {
-				echo '<div class="notice notice-error"><p>' . esc_html__( 'Please select or upload at least one image.', 'images-to-woo-products' ) . '</p></div>';
+				echo '<div class="notice notice-error"><p>' . esc_html__( 'Please select or upload at least one image.', 'images-to-products-for-woocommerce' ) . '</p></div>';
 			} else {
 				$result = self::create_products( $ids, $per_image, $use_sku, $global_pref, $global_cats );
 
 				/* translators: 1: created products count, 2: skipped images count */
 				$msg = sprintf(
-					esc_html__( 'Done: created %1$d products, skipped %2$d.', 'images-to-woo-products' ),
+					esc_html__( 'Done: created %1$d products, skipped %2$d.', 'images-to-products-for-woocommerce' ),
 					intval( $result['created'] ),
 					intval( $result['skipped'] )
 				);
@@ -71,8 +71,8 @@ final class ITPWC_Uploader {
 		$allowed_option   = array( 'option' => array( 'value' => true, 'selected' => true ) );
 
 		echo '<div class="wrap">';
-		echo '<h1>' . esc_html__( 'Images → Woo Products (Uploader)', 'images-to-woo-products' ) . '</h1>';
-		echo '<p>' . esc_html__( 'Select or upload images, then convert them into products.', 'images-to-woo-products' ) . '</p>';
+		echo '<h1>' . esc_html__( 'Images → Woo Products (Uploader)', 'images-to-products-for-woocommerce' ) . '</h1>';
+		echo '<p>' . esc_html__( 'Select or upload images, then convert them into products.', 'images-to-products-for-woocommerce' ) . '</p>';
 
 		// Simple layout CSS.
 		echo '<style>
@@ -92,38 +92,38 @@ final class ITPWC_Uploader {
 		echo '<input type="hidden" id="itpwc_per_image" name="itpwc_per_image" value="{}" />';
 
 		echo '<div class="itpwc-card itpwc-settings">';
-		echo '<h2>' . esc_html__( 'Settings', 'images-to-woo-products' ) . '</h2>';
+		echo '<h2>' . esc_html__( 'Settings', 'images-to-products-for-woocommerce' ) . '</h2>';
 		echo '<div class="itpwc-grid-compact">';
 
 		echo '<div class="itpwc-setting"><label><input type="checkbox" name="itpwc_use_sku" value="1" checked="checked" /> ' .
-			esc_html__( 'Auto-generate SKU (prefix + incremental)', 'images-to-woo-products' ) .
+			esc_html__( 'Auto-generate SKU (prefix + incremental)', 'images-to-products-for-woocommerce' ) .
 		'</label></div>';
 
-		echo '<div class="itpwc-setting"><label for="itpwc_sku_prefix">' . esc_html__( 'SKU Prefix', 'images-to-woo-products' ) . '</label>' .
+		echo '<div class="itpwc-setting"><label for="itpwc_sku_prefix">' . esc_html__( 'SKU Prefix', 'images-to-products-for-woocommerce' ) . '</label>' .
 			'<input type="text" id="itpwc_sku_prefix" name="itpwc_sku_prefix" value="" class="regular-text" /></div>';
 
-		echo '<div class="itpwc-setting"><label for="itpwc_global_cats">' . esc_html__( 'Global categories (optional)', 'images-to-woo-products' ) . '</label>' .
+		echo '<div class="itpwc-setting"><label for="itpwc_global_cats">' . esc_html__( 'Global categories (optional)', 'images-to-products-for-woocommerce' ) . '</label>' .
 			'<select id="itpwc_global_cats" name="itpwc_global_cats[]" multiple="multiple" style="min-width:260px;min-height:96px">' .
-				'<option value="0">' . esc_html__( '— No category —', 'images-to-woo-products' ) . '</option>' .
+				'<option value="0">' . esc_html__( '— No category —', 'images-to-products-for-woocommerce' ) . '</option>' .
 				wp_kses( $cat_options_html, $allowed_option ) .
 			'</select></div>';
 
 		echo '</div></div>';
 
 		echo '<div class="itpwc-toolbar">';
-		echo '<button type="button" class="button button-secondary" id="itpwc_select_btn">' . esc_html__( 'Select / Upload images', 'images-to-woo-products' ) . '</button> ';
-		echo '<button type="button" class="button" id="itpwc_clear_btn">' . esc_html__( 'Clear selection', 'images-to-woo-products' ) . '</button>';
+		echo '<button type="button" class="button button-secondary" id="itpwc_select_btn">' . esc_html__( 'Select / Upload images', 'images-to-products-for-woocommerce' ) . '</button> ';
+		echo '<button type="button" class="button" id="itpwc_clear_btn">' . esc_html__( 'Clear selection', 'images-to-products-for-woocommerce' ) . '</button>';
 		echo '</div>';
 
 		echo '<table class="wp-list-table widefat fixed striped itpwc-table">';
 		echo '<thead><tr>' .
-			'<th class="column-thumb">' . esc_html__( 'Image', 'images-to-woo-products' ) . '</th>' .
-			'<th class="column-name">' . esc_html__( 'Name', 'images-to-woo-products' ) . '</th>' .
-			'<th class="column-sku">' . esc_html__( 'SKU', 'images-to-woo-products' ) . '</th>' .
-			'<th class="column-cats">' . esc_html__( 'Categories', 'images-to-woo-products' ) . '</th>' .
+			'<th class="column-thumb">' . esc_html__( 'Image', 'images-to-products-for-woocommerce' ) . '</th>' .
+			'<th class="column-name">' . esc_html__( 'Name', 'images-to-products-for-woocommerce' ) . '</th>' .
+			'<th class="column-sku">' . esc_html__( 'SKU', 'images-to-products-for-woocommerce' ) . '</th>' .
+			'<th class="column-cats">' . esc_html__( 'Categories', 'images-to-products-for-woocommerce' ) . '</th>' .
 		'</tr></thead><tbody id="the-list"></tbody></table>';
 
-		echo '<p class="submit"><button type="submit" name="itpwc_run" class="button button-primary">' . esc_html__( 'Create Products', 'images-to-woo-products' ) . '</button></p>';
+		echo '<p class="submit"><button type="submit" name="itpwc_run" class="button button-primary">' . esc_html__( 'Create Products', 'images-to-products-for-woocommerce' ) . '</button></p>';
 
 		echo '<div id="itpwc-cat-options-tpl" style="display:none">' . wp_kses( $cat_options_html, $allowed_option ) . '</div>';
 		echo wp_print_inline_script_tag( self::inline_js(), array( 'type' => 'text/javascript' ) );
@@ -298,7 +298,7 @@ final class ITPWC_Uploader {
 
 	function openMediaFrame(){
 		if (mediaFrame) { mediaFrame.open(); return; }
-		mediaFrame = wp.media({ multiple: true, title: '<?php echo esc_js( __( 'Select images', 'images-to-woo-products' ) ); ?>' });
+		mediaFrame = wp.media({ multiple: true, title: '<?php echo esc_js( __( 'Select images', 'images-to-products-for-woocommerce' ) ); ?>' });
 		mediaFrame.on('select', function(){
 			const sel   = mediaFrame.state().get('selection').toJSON() || [];
 			const ids   = sel.map(i => i.id);

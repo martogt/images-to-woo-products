@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🖼️ **Images to Woo Products (Uploader Edition)**  
+# 🖼️ **Images to Products for WooCommerce (Uploader Edition)**  
 ### _Bulk-create WooCommerce products directly from images_
 
 <img src="https://raw.githubusercontent.com/martogt/images-to-woo-products/main/assets/banner-preview.png" alt="Images to Woo Products preview" width="100%" />
