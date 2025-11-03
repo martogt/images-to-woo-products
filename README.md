@@ -185,5 +185,3 @@ Design concept:
 - Minimalist **camera + WooCommerce “W”** combination.  
 - Purple gradient (#96588A) on white background.  
 - Rounded square, Apple-like shading.
-
-Example:

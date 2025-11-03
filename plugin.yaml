@@ -1,11 +1,11 @@
-name: Images to Woo Products (Uploader Edition)
-slug: images-to-woo-products
+name: Images to Products for WooCommerce (Uploader Edition)
+slug: Images to Products for WooCommerce (Uploader Edition)
 description: >
   Upload or select multiple images and automatically create WooCommerce Simple
   products from them. Per-item controls (price, categories, visibility, status,
   tags, SKU prefix), global settings (auto-SKU, global categories), duplicate
   detection with preview, optional image reuse, and Woo onboarding redirect guard.
-version: 2.3.2
+version: 2.3.3
 author: Marv
 license: GPL-2.0-or-later
 homepage: https://github.com/martogt/images-to-woo-products

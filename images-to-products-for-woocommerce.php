@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/itpwc-compat.php';
 /**
  * Plugin Name: Images to Products for WooCommerce (Uploader Edition)
  * Plugin URI:  https://github.com/martogt/images-to-products-for-woocommerce

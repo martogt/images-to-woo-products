@@ -162,7 +162,7 @@ final class ITPWC_Uploader {
 
 	/** Find existing product by exact title (non-trash only). */
 	private static function find_existing_product_by_title( $title ) {
-		$existing = get_page_by_title( $title, OBJECT, 'product' );
+		$existing = itpwc_get_page_by_title_safe( $title, OBJECT, 'product' );
 		if ( $existing && 'trash' !== get_post_status( $existing ) ) {
 			return $existing;
 		}
