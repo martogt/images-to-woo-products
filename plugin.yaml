@@ -5,7 +5,7 @@ description: >
   products from them. Per-item controls (price, categories, visibility, status,
   tags, SKU prefix), global settings (auto-SKU, global categories), duplicate
   detection with preview, optional image reuse, and Woo onboarding redirect guard.
-version: 2.3.3
+version: 2.3.5
 author: Marv
 license: GPL-2.0-or-later
 homepage: https://github.com/martogt/images-to-woo-products

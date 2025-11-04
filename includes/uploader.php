@@ -43,13 +43,16 @@ final class ITPWC_Uploader {
 
 			$use_sku     = ! empty( $_POST['itpwc_use_sku'] );
 			$global_pref = isset( $_POST['itpwc_sku_prefix'] ) ? sanitize_text_field( wp_unslash( $_POST['itpwc_sku_prefix'] ) ) : '';
-			$per_image   = isset( $_POST['itpwc_per_image'] ) ? json_decode( wp_unslash( $_POST['itpwc_per_image'] ), true ) : array();
+			check_admin_referer( 'itpwc_run_nonce' );
+			$per_image = isset( $_POST['itpwc_per_image'] )
+				? json_decode( wp_unslash( $_POST['itpwc_per_image'] ), true )
+				: array();
 			if ( ! is_array( $per_image ) ) { $per_image = array(); }
-			// Deep sanitize
-			$_clean = array();
+
+			$clean = array();
 			foreach ( $per_image as $k => $row ) {
 				$r = is_array( $row ) ? $row : array();
-				$_clean[ intval( $k ) ] = array(
+				$clean[ absint( $k ) ] = array(
 					'name'  => isset( $r['name'] ) ? sanitize_text_field( $r['name'] ) : '',
 					'sku'   => isset( $r['sku'] ) ? sanitize_text_field( $r['sku'] ) : '',
 					'desc'  => isset( $r['desc'] ) ? wp_kses_post( $r['desc'] ) : '',
@@ -57,7 +60,22 @@ final class ITPWC_Uploader {
 					'cats'  => isset( $r['cats'] ) ? array_map( 'absint', (array) $r['cats'] ) : array(),
 				);
 			}
-			$per_image = $_clean;
+			$per_image = $clean;
+			// $per_image   = isset( $_POST['itpwc_per_image'] ) ? json_decode( wp_unslash( $_POST['itpwc_per_image'] ), true ) : array();
+			// if ( ! is_array( $per_image ) ) { $per_image = array(); }
+			// // Deep sanitize
+			// $_clean = array();
+			// foreach ( $per_image as $k => $row ) {
+			// 	$r = is_array( $row ) ? $row : array();
+			// 	$_clean[ intval( $k ) ] = array(
+			// 		'name'  => isset( $r['name'] ) ? sanitize_text_field( $r['name'] ) : '',
+			// 		'sku'   => isset( $r['sku'] ) ? sanitize_text_field( $r['sku'] ) : '',
+			// 		'desc'  => isset( $r['desc'] ) ? wp_kses_post( $r['desc'] ) : '',
+			// 		'price' => isset( $r['price'] ) ? floatval( $r['price'] ) : 0,
+			// 		'cats'  => isset( $r['cats'] ) ? array_map( 'absint', (array) $r['cats'] ) : array(),
+			// 	);
+			// }
+			// $per_image = $_clean;
 			$ids_raw     = isset( $_POST['itpwc_attachment_ids'] ) ? sanitize_text_field( wp_unslash( $_POST['itpwc_attachment_ids'] ) ) : '';
 			$ids         = array_filter( array_map( 'absint', array_filter( array_map( 'trim', explode( ',', $ids_raw ) ) ) ) );
 
@@ -68,12 +86,14 @@ final class ITPWC_Uploader {
 				echo '<div class="notice notice-error"><p>' . esc_html__( 'Please select or upload at least one image.', 'images-to-products-for-woocommerce' ) . '</p></div>';
 			} else {
 				$result = self::create_products( $ids, $per_image, $use_sku, $global_pref, $global_cats );
+				$created = isset( $result['created'] ) ? (int) $result['created'] : 0;
+				$skipped = isset( $result['skipped'] ) ? (int) $result['skipped'] : 0;
 
 				/* translators: 1: created products count, 2: skipped images count */
 				$msg = sprintf(
 					esc_html__( 'Done: created %1$d products, skipped %2$d.', 'images-to-products-for-woocommerce' ),
-					intval( $result['created'] ),
-					intval( $result['skipped'] )
+					$created,
+					$skipped
 				);
 
 				echo '<div class="notice notice-success"><p>' . esc_html( $msg ) . '</p></div>';
@@ -179,6 +199,7 @@ echo '<div class="itpwc-toolbar">';
 echo '<p class="submit"><button type="submit" name="itpwc_run" class="button button-primary">' . esc_html__( 'Create Products', 'images-to-products-for-woocommerce' ) . '</button></p>';
 
 		echo '<div id="itpwc-cat-options-tpl" style="display:none">' . wp_kses( $cat_options_html, $allowed_option ) . '</div>';
+/* phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped */
 		echo wp_print_inline_script_tag( self::inline_js(), array( 'type' => 'text/javascript' ) );
 		echo '</form></div>';
 	}

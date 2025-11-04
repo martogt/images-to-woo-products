@@ -1,0 +1,78 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read tag version
+        id: meta
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          # Optional: strip leading v for file names
+          echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+
+      - name: Show structure
+        run: ls -la
+
+      - name: Validate required files exist
+        run: |
+
+test -f ./readme.txt
+test -f ./images-to-products-for-woocommerce.php
+test -f ./assets/screenshot-1.png
+test -f ./assets/screenshot-2.png
+
+- name: Create plugin zip
+        run: |
+          PLUGIN_SLUG="images-to-woo-products"
+          ZIP="${PLUGIN_SLUG}-${{ steps.meta.outputs.version }}.zip"
+          mkdir -p dist
+          # Copy only necessary files (respect build.include/exclude logic)
+          rsync -av --exclude='.git' --exclude='.github' --exclude='.vscode' \
+            --exclude='dist' --exclude='*.zip' --exclude='node_modules' \
+            ./ "./${PLUGIN_SLUG}/"
+          cd ..
+          zip -r "${GITHUB_WORKSPACE}/dist/${ZIP}" "${GITHUB_WORKSPACE##*/}/${PLUGIN_SLUG}" \
+            -x "**/.git/**" "**/.github/**" "**/.vscode/**" "**/node_modules/**"
+          cd "${GITHUB_WORKSPACE}"
+          ls -la dist
+
+      - name: Generate release notes
+        id: notes
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: false
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: "Images to Woo Products ${{
+            steps.meta.outputs.version }}"
+          body: |
+            **Images to Woo Products (Uploader Edition) – ${{ steps.meta.outputs.version }}**
+
+            - Bulk-create WooCommerce products directly from images
+            - Per-item controls (price, categories, status, visibility, SKU, tags)
+            - Auto-SKU with persisted counter and prefixes
+            - Duplicate detection modal
+            - Optional image reuse
+            - Woo onboarding redirect guard
+
+            _Changelog:_  
+            - Update README and assets  
+            - Stability and minor UI refinements
+          files: |
+            dist/*.zip
