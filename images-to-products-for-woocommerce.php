@@ -1,10 +1,9 @@
 <?php
-require_once __DIR__ . '/includes/itpwc-compat.php';
 /**
- * Plugin Name: Images to Products for WooCommerce (Uploader Edition)
- * Plugin URI:  https://github.com/martogt/images-to-products-for-woocommerce
+ * Plugin Name: Images to Products for WooCommerce
+ * Plugin URI:  https://github.com/martogt/images-to-woo-products
  * Description: Bulk convert selected images into WooCommerce products (simple products with featured image, optional SKU prefix).
- * Version: 2.3.2
+ * Version: 2.3.5
  * Requires at least: 6.0
  * Tested up to: 6.8
  * Requires PHP: 7.4
@@ -20,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'IMTOWOOPRO_VERSION', '2.3.2' );
+define( 'IMTOWOOPRO_VERSION', '2.3.5' );
 define( 'IMTOWOOPRO_PLUGIN_FILE', __FILE__ );
 define( 'IMTOWOOPRO_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'IMTOWOOPRO_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -33,7 +32,7 @@ add_action( 'plugins_loaded', function () {
 	if ( ! class_exists( 'WooCommerce' ) ) {
 		add_action( 'admin_notices', function () {
 			echo '<div class="notice notice-error"><p>' .
-				esc_html__( 'Images to Woo Products requires WooCommerce to be installed and active.', 'images-to-products-for-woocommerce' ) .
+				esc_html__( 'Images to Products for WooCommerce requires WooCommerce to be installed and active.', 'images-to-products-for-woocommerce' ) .
 			'</p></div>';
 		} );
 		return;

@@ -2,7 +2,7 @@
 /**
  * Admin UI and bulk creator.
  *
- * @package images-to-products-for-woocommerce
+ * @package images-to-woo-products
  */
 
 if ( ! defined( 'ABSPATH' ) ) { exit; }
@@ -44,6 +44,20 @@ final class ITPWC_Uploader {
 			$use_sku     = ! empty( $_POST['itpwc_use_sku'] );
 			$global_pref = isset( $_POST['itpwc_sku_prefix'] ) ? sanitize_text_field( wp_unslash( $_POST['itpwc_sku_prefix'] ) ) : '';
 			$per_image   = isset( $_POST['itpwc_per_image'] ) ? json_decode( wp_unslash( $_POST['itpwc_per_image'] ), true ) : array();
+			if ( ! is_array( $per_image ) ) { $per_image = array(); }
+			// Deep sanitize
+			$_clean = array();
+			foreach ( $per_image as $k => $row ) {
+				$r = is_array( $row ) ? $row : array();
+				$_clean[ intval( $k ) ] = array(
+					'name'  => isset( $r['name'] ) ? sanitize_text_field( $r['name'] ) : '',
+					'sku'   => isset( $r['sku'] ) ? sanitize_text_field( $r['sku'] ) : '',
+					'desc'  => isset( $r['desc'] ) ? wp_kses_post( $r['desc'] ) : '',
+					'price' => isset( $r['price'] ) ? floatval( $r['price'] ) : 0,
+					'cats'  => isset( $r['cats'] ) ? array_map( 'absint', (array) $r['cats'] ) : array(),
+				);
+			}
+			$per_image = $_clean;
 			$ids_raw     = isset( $_POST['itpwc_attachment_ids'] ) ? sanitize_text_field( wp_unslash( $_POST['itpwc_attachment_ids'] ) ) : '';
 			$ids         = array_filter( array_map( 'absint', array_filter( array_map( 'trim', explode( ',', $ids_raw ) ) ) ) );
 
@@ -75,15 +89,25 @@ final class ITPWC_Uploader {
 		echo '<p>' . esc_html__( 'Select or upload images, then convert them into products.', 'images-to-products-for-woocommerce' ) . '</p>';
 
 		// Simple layout CSS.
+		
 		echo '<style>
-			.itpwc-grid-compact{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:12px 0}
-			.itpwc-setting{display:flex;align-items:center;gap:8px}
-			.itpwc-toolbar{margin:12px 0}
-			.itpwc-table .column-thumb{width:100px}
-			.itpwc-table .column-name{width:35%}
-			.itpwc-table .column-sku{width:20%}
-			.itpwc-table .column-cats{width:30%}
-		</style>';
+        .itpwc-table{table-layout:fixed;border-collapse:separate;border-spacing:0}
+        .itpwc-table th{white-space:nowrap;text-align:left;padding:8px}
+        .itpwc-table td{vertical-align:top;padding:8px}
+        .itpwc-table .column-thumb img{max-width:80px;height:auto}
+        .itpwc-table .column-name input{width:100%}
+        .itpwc-table .column-sku input{width:100%}
+        .itpwc-table .column-price input{width:100%;text-align:right}
+        .itpwc-table .column-desc textarea{width:100%;height:64px;resize:vertical}
+        .itpwc-table .column-cats select{width:100%;min-height:120px}
+        /* Settings layout */
+        .itpwc-settings .itpwc-grid-compact{display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:14px;align-items:start}
+        .itpwc-settings .itpwc-setting label{display:block;margin-bottom:6px;font-weight:600}
+        .itpwc-settings .itpwc-setting input[type="text"]{width:100%}
+        .itpwc-settings .itpwc-setting select{width:100%;min-height:120px}
+        .itpwc-toolbar{margin:10px 0}
+        </style>';
+
 
 		echo '<form method="post" id="itpwc_form">';
 		wp_nonce_field( 'itpwc_run_nonce' );
@@ -110,20 +134,49 @@ final class ITPWC_Uploader {
 
 		echo '</div></div>';
 
-		echo '<div class="itpwc-toolbar">';
+		
+		
+		echo '<style>
+        .itpwc-table{table-layout:fixed;border-collapse:separate;border-spacing:0}
+        .itpwc-table th{white-space:nowrap;text-align:left;padding:8px}
+        .itpwc-table td{vertical-align:top;padding:8px}
+        .itpwc-table .column-thumb img{max-width:80px;height:auto}
+        .itpwc-table .column-name input{width:100%}
+        .itpwc-table .column-sku input{width:100%}
+        .itpwc-table .column-price input{width:100%;text-align:right}
+        .itpwc-table .column-desc textarea{width:100%;height:64px;resize:vertical}
+        .itpwc-table .column-cats select{width:100%;min-height:120px}
+        /* Settings layout */
+        .itpwc-settings .itpwc-grid-compact{display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:14px;align-items:start}
+        .itpwc-settings .itpwc-setting label{display:block;margin-bottom:6px;font-weight:600}
+        .itpwc-settings .itpwc-setting input[type="text"]{width:100%}
+        .itpwc-settings .itpwc-setting select{width:100%;min-height:120px}
+        .itpwc-toolbar{margin:10px 0}
+        </style>';
+
+echo '<div class="itpwc-toolbar">';
 		echo '<button type="button" class="button button-secondary" id="itpwc_select_btn">' . esc_html__( 'Select / Upload images', 'images-to-products-for-woocommerce' ) . '</button> ';
 		echo '<button type="button" class="button" id="itpwc_clear_btn">' . esc_html__( 'Clear selection', 'images-to-products-for-woocommerce' ) . '</button>';
 		echo '</div>';
 
 		echo '<table class="wp-list-table widefat fixed striped itpwc-table">';
+		echo '<colgroup>
+				<col style="width:90px" />
+				<col style="width:auto" />
+				<col style="width:320px" />
+				<col style="width:110px" />
+				<col style="width:280px" />
+				<col style="width:240px" />
+			</colgroup>';
 		echo '<thead><tr>' .
 			'<th class="column-thumb">' . esc_html__( 'Image', 'images-to-products-for-woocommerce' ) . '</th>' .
 			'<th class="column-name">' . esc_html__( 'Name', 'images-to-products-for-woocommerce' ) . '</th>' .
 			'<th class="column-sku">' . esc_html__( 'SKU', 'images-to-products-for-woocommerce' ) . '</th>' .
+			'<th class="column-price">' . esc_html__( 'Price', 'images-to-products-for-woocommerce' ) . '</th>' .
+			'<th class="column-desc">' . esc_html__( 'Description', 'images-to-products-for-woocommerce' ) . '</th>' .
 			'<th class="column-cats">' . esc_html__( 'Categories', 'images-to-products-for-woocommerce' ) . '</th>' .
 		'</tr></thead><tbody id="the-list"></tbody></table>';
-
-		echo '<p class="submit"><button type="submit" name="itpwc_run" class="button button-primary">' . esc_html__( 'Create Products', 'images-to-products-for-woocommerce' ) . '</button></p>';
+echo '<p class="submit"><button type="submit" name="itpwc_run" class="button button-primary">' . esc_html__( 'Create Products', 'images-to-products-for-woocommerce' ) . '</button></p>';
 
 		echo '<div id="itpwc-cat-options-tpl" style="display:none">' . wp_kses( $cat_options_html, $allowed_option ) . '</div>';
 		echo wp_print_inline_script_tag( self::inline_js(), array( 'type' => 'text/javascript' ) );
@@ -160,14 +213,24 @@ final class ITPWC_Uploader {
 		return $a === $b;
 	}
 
-	/** Find existing product by exact title (non-trash only). */
-	private static function find_existing_product_by_title( $title ) {
-		$existing = itpwc_get_page_by_title_safe( $title, OBJECT, 'product' );
-		if ( $existing && 'trash' !== get_post_status( $existing ) ) {
-			return $existing;
-		}
-		return null;
-	}
+	
+/** Find existing product by exact title (non-trash only). */
+private static function find_existing_product_by_title( $title ) {
+    $title = sanitize_text_field( $title );
+    $q = new WP_Query( array(
+        'post_type'      => 'product',
+        'post_status'    => array( 'publish','pending','draft','private' ),
+        'title'          => $title,
+        'posts_per_page' => 1,
+        'fields'         => 'ids',
+        'no_found_rows'  => true,
+    ) );
+    if ( $q instanceof WP_Query && ! empty( $q->posts ) ) {
+        return (int) $q->posts[0];
+    }
+    return 0;
+}
+
 
 	/** Generate a category prefix like "[POSTERS] ". */
 	private static function category_prefix( $cat_ids ) {
@@ -223,7 +286,7 @@ final class ITPWC_Uploader {
 			$existing = self::find_existing_product_by_title( $title );
 
 			if ( $existing ) {
-				$existing_cats = wp_get_post_terms( $existing->ID, 'product_cat', array( 'fields' => 'ids' ) );
+				$existing_cats = wp_get_post_terms( $existing, 'product_cat', array( 'fields' => 'ids' ) );
 
 				if ( self::same_id_set( $existing_cats, $effective_cats ) ) {
 					// Same name + same cats → skip.
@@ -247,7 +310,7 @@ final class ITPWC_Uploader {
 					'post_title'   => $title,
 					'post_status'  => 'publish',
 					'post_type'    => 'product',
-					'post_content' => '',
+					'post_content' => isset( $row['desc'] ) ? wp_kses_post( $row['desc'] ) : '',
 				),
 				true
 			);
@@ -274,7 +337,30 @@ final class ITPWC_Uploader {
 				$prefix    = $global_pref ? $global_pref : 'SKU';
 				$final_sku = $prefix . '-' . $pid;
 			}
-			if ( ! empty( $final_sku ) ) {
+			
+
+// Persist SKU (if any).
+if ( ! empty( $final_sku ) ) {
+    update_post_meta( $pid, '_sku', $final_sku );
+}
+
+// Price.
+$price = 0;
+if ( isset( $row['price'] ) ) {
+    $price = floatval( $row['price'] );
+}
+if ( $price > 0 ) {
+    update_post_meta( $pid, '_regular_price', $price );
+    update_post_meta( $pid, '_price', $price );
+    if ( function_exists( 'wc_get_product' ) ) {
+        $product = wc_get_product( $pid );
+        if ( $product ) {
+            $product->set_regular_price( $price );
+            $product->save();
+        }
+    }
+}
+if ( ! empty( $final_sku ) ) {
 				update_post_meta( $pid, '_sku', $final_sku );
 			}
 
@@ -319,6 +405,8 @@ final class ITPWC_Uploader {
 						<td class="column-thumb"><img src="${thumb}" style="max-width:80px;height:auto" alt="thumb"/></td>
 						<td class="column-name"><input type="text" value="${String(name).replace(/"/g,'&quot;')}" class="widefat"/></td>
 						<td class="column-sku"><input type="text" value="" class="regular-text"/></td>
+						<td class="column-price"><input type="number" step="0.01" min="0" value="" class="small-text"/></td>
+						<td class="column-desc"><textarea rows="2" class="widefat" placeholder=""></textarea></td>
 						<td class="column-cats"><select multiple="multiple" style="min-width:200px">${cat}</select></td>
 					</tr>`;
 				$tb.append(row);
@@ -338,6 +426,8 @@ final class ITPWC_Uploader {
 			data[idx] = {
 				name: $tr.find('.column-name input').val() || '',
 				sku:  $tr.find('.column-sku input').val() || '',
+				desc: $tr.find('.column-desc textarea').val() || '',
+				price: parseFloat($tr.find('.column-price input').val()) || 0,
 				cats: ($tr.find('.column-cats select').val() || []).map(v => parseInt(v,10) || 0)
 			};
 		});
